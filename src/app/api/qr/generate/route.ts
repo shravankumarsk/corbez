@@ -1,10 +1,17 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/auth'
 import { generateVerificationToken, generateQRCodeURL } from '@/lib/services/qr/token-generator'
 import QRCode from 'qrcode'
+import { rateLimiters } from '@/lib/security/rate-limiter'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Apply rate limiting - prevent QR code spam
+    const rateLimitResponse = await rateLimiters.api(request)
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     const session = await auth()
 
     if (!session?.user?.id) {

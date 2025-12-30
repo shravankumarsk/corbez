@@ -8,6 +8,7 @@ import { Company, CompanyStatus } from '@/lib/db/models/company.model'
 import { InviteCode, InviteCodeStatus } from '@/lib/db/models/invite-code.model'
 import { Referral, ReferralStatus } from '@/lib/db/models/referral.model'
 import { sendVerificationEmail } from '@/lib/services/email/resend'
+import { rateLimiters } from '@/lib/security/rate-limiter'
 
 // Generate URL-friendly slug from company name
 function generateSlug(name: string): string {
@@ -19,6 +20,12 @@ function generateSlug(name: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting - strict for registration (prevent spam accounts)
+    const rateLimitResponse = await rateLimiters.auth(request)
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     const {
       firstName,
       lastName,

@@ -4,9 +4,17 @@ import { connectDB } from '@/lib/db/mongoose'
 import { Employee } from '@/lib/db/models/employee.model'
 import { couponService } from '@/lib/services/coupon.service'
 import { moderationService } from '@/lib/services/moderation.service'
+import { rateLimiters } from '@/lib/security/rate-limiter'
+import { fraudDetection } from '@/lib/security/fraud-detection'
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting - prevent coupon claim spam
+    const rateLimitResponse = await rateLimiters.couponClaim(request)
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -37,6 +45,19 @@ export async function POST(request: NextRequest) {
         success: false,
         error: access.reason,
       }, { status: 403 })
+    }
+
+    // Validate coupon claim with fraud detection
+    const validation = await fraudDetection.validateCouponClaim(
+      employee._id.toString(),
+      merchantId
+    )
+
+    if (!validation.allowed) {
+      return NextResponse.json({
+        success: false,
+        error: validation.reason || 'Coupon claim not allowed',
+      }, { status: validation.severity === 'BLOCK' ? 403 : 400 })
     }
 
     // Check if already has active coupon for this merchant

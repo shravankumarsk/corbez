@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { applySecurityHeaders } from '@/lib/security/headers'
 
 // Define route access rules
 const routeAccess: Record<string, string[]> = {
@@ -51,14 +52,18 @@ export async function middleware(request: NextRequest) {
   // If authenticated user tries to access auth routes, redirect to appropriate dashboard
   if (isAuthenticated && isAuthRoute) {
     const dashboardPath = getDashboardPath(userRole)
-    return NextResponse.redirect(new URL(dashboardPath, request.url))
+    const response = NextResponse.redirect(new URL(dashboardPath, request.url))
+    applySecurityHeaders(response.headers)
+    return response
   }
 
   // If not authenticated and trying to access protected route
   if (!isAuthenticated && !isPublicRoute) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('callbackUrl', pathname)
-    return NextResponse.redirect(loginUrl)
+    const response = NextResponse.redirect(loginUrl)
+    applySecurityHeaders(response.headers)
+    return response
   }
 
   // Check role-based access for dashboard routes
@@ -67,11 +72,16 @@ export async function middleware(request: NextRequest) {
     if (!hasAccess) {
       // Redirect to user's own dashboard
       const dashboardPath = getDashboardPath(userRole)
-      return NextResponse.redirect(new URL(dashboardPath, request.url))
+      const response = NextResponse.redirect(new URL(dashboardPath, request.url))
+      applySecurityHeaders(response.headers)
+      return response
     }
   }
 
-  return NextResponse.next()
+  // Apply security headers to all responses
+  const response = NextResponse.next()
+  applySecurityHeaders(response.headers)
+  return response
 }
 
 function getDashboardPath(role: string | undefined): string {
