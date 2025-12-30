@@ -1,0 +1,18 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- C shape (coral) - thick ring with gap on right -->
+  <path d="M20 2A18 18 0 0 0 20 38A18 18 0 0 0 35 26L29 26A12 12 0 1 1 29 14L35 14A18 18 0 0 0 20 2Z" fill="#E07A6B"/>
+
+  <!-- Key stem (teal) -->
+  <rect x="19" y="1" width="5" height="22" fill="#5BBFAA"/>
+  <!-- Key teeth pointing left -->
+  <rect x="13" y="4" width="6" height="4" fill="#5BBFAA"/>
+  <rect x="14" y="11" width="5" height="4" fill="#5BBFAA"/>
+  <!-- Key circle/bowl (b shape) -->
+  <circle cx="21.5" cy="28" r="9" fill="#5BBFAA"/>
+  <circle cx="21.5" cy="28" r="4" fill="#0A2540"/>
+
+  <!-- Text: Corbe (white for dark backgrounds) -->
+  <text x="46" y="27" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="700">
+    <tspan fill="white">Cor</tspan><tspan fill="#E07A6B">be</tspan>
+  </text>
+</svg>

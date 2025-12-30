@@ -1,0 +1,15 @@
+// Service layer exports
+export { BaseService } from './base.service'
+export { userService } from './user.service'
+export { merchantService } from './merchant.service'
+export { discountService } from './discount.service'
+export { moderationService } from './moderation.service'
+export { qrcodeService } from './qrcode.service'
+export { couponService } from './coupon.service'
+
+export type { CreateUserInput, UpdateUserInput } from './user.service'
+export type { CreateMerchantInput, UpdateMerchantInput, OnboardingInput } from './merchant.service'
+export type { CreateDiscountInput, UpdateDiscountInput } from './discount.service'
+export type { SuspendOptions, ModerationResult } from './moderation.service'
+export type { QRCodeOptions, CouponQRData, EmployeePassQRData } from './qrcode.service'
+export type { ClaimCouponInput, CouponWithDetails } from './coupon.service'
