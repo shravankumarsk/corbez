@@ -59,12 +59,31 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { type, name, percentage, companyName, minSpend, monthlyUsageLimit } = body
+    const {
+      type,
+      name,
+      percentage,
+      companyName,
+      minSpend,
+      perkItem,
+      perkValue,
+      perkDescription,
+      perkRestrictions,
+      monthlyUsageLimit
+    } = body
 
     // Validate required fields
-    if (!type || !name || percentage === undefined) {
+    if (!type || !name) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Percentage is required for all types except COMPANY_PERK
+    if (type !== DiscountType.COMPANY_PERK && percentage === undefined) {
+      return NextResponse.json(
+        { success: false, error: 'Percentage is required' },
         { status: 400 }
       )
     }
@@ -77,8 +96,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate percentage
-    if (percentage < 0 || percentage > 100) {
+    // Validate percentage (if provided)
+    if (percentage !== undefined && (percentage < 0 || percentage > 100)) {
       return NextResponse.json(
         { success: false, error: 'Percentage must be between 0 and 100' },
         { status: 400 }
@@ -98,6 +117,27 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Minimum spend amount is required for spend threshold discounts' },
         { status: 400 }
       )
+    }
+
+    if (type === DiscountType.COMPANY_PERK) {
+      if (!companyName) {
+        return NextResponse.json(
+          { success: false, error: 'Company name is required for company perks' },
+          { status: 400 }
+        )
+      }
+      if (!perkItem) {
+        return NextResponse.json(
+          { success: false, error: 'Perk item is required for company perks' },
+          { status: 400 }
+        )
+      }
+      if (perkValue !== undefined && perkValue < 0) {
+        return NextResponse.json(
+          { success: false, error: 'Perk value cannot be negative' },
+          { status: 400 }
+        )
+      }
     }
 
     // Validate monthly usage limit
@@ -153,10 +193,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Check for duplicate company perk with same item
+    if (type === DiscountType.COMPANY_PERK) {
+      const existingPerk = await Discount.findOne({
+        merchantId: merchant._id,
+        type: DiscountType.COMPANY_PERK,
+        companyName: { $regex: new RegExp(`^${companyName}$`, 'i') },
+        perkItem: { $regex: new RegExp(`^${perkItem}$`, 'i') },
+      })
+
+      if (existingPerk) {
+        return NextResponse.json(
+          { success: false, error: 'A perk with this item for this company already exists' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Set priority based on type
     let priority = 0
     if (type === DiscountType.SPEND_THRESHOLD) {
       priority = 10 // Highest priority
+    } else if (type === DiscountType.COMPANY_PERK) {
+      priority = 6 // Medium-high priority (perks are special)
     } else if (type === DiscountType.COMPANY) {
       priority = 5 // Medium priority
     }
@@ -167,9 +226,13 @@ export async function POST(request: NextRequest) {
       merchantId: merchant._id,
       type,
       name,
-      percentage,
-      companyName: type === DiscountType.COMPANY ? companyName : undefined,
+      percentage: type === DiscountType.COMPANY_PERK ? 0 : percentage,
+      companyName: (type === DiscountType.COMPANY || type === DiscountType.COMPANY_PERK) ? companyName : undefined,
       minSpend: type === DiscountType.SPEND_THRESHOLD ? minSpend : undefined,
+      perkItem: type === DiscountType.COMPANY_PERK ? perkItem : undefined,
+      perkValue: type === DiscountType.COMPANY_PERK ? perkValue : undefined,
+      perkDescription: type === DiscountType.COMPANY_PERK ? perkDescription : undefined,
+      perkRestrictions: type === DiscountType.COMPANY_PERK ? perkRestrictions : undefined,
       monthlyUsageLimit: monthlyUsageLimit || null,
       priority,
       isActive: true,

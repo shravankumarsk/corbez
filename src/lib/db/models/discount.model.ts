@@ -4,6 +4,7 @@ export enum DiscountType {
   BASE = 'BASE', // Default discount for all verified employees
   COMPANY = 'COMPANY', // Discount for specific company
   SPEND_THRESHOLD = 'SPEND_THRESHOLD', // Discount based on order amount
+  COMPANY_PERK = 'COMPANY_PERK', // Free item perk for specific company
 }
 
 export interface IDiscount extends Document {
@@ -16,6 +17,11 @@ export interface IDiscount extends Document {
   companyName?: string
   // For SPEND_THRESHOLD type
   minSpend?: number
+  // For COMPANY_PERK type
+  perkItem?: string // "Free appetizer", "Free dessert", etc.
+  perkValue?: number // Estimated value in USD (for analytics)
+  perkDescription?: string // "Choose any appetizer from menu"
+  perkRestrictions?: string // "Dine-in only, lunch 11am-3pm"
   // Usage limits
   monthlyUsageLimit?: number | null // null = unlimited
   // General settings
@@ -58,6 +64,19 @@ const discountSchema = new Schema<IDiscount>(
     minSpend: {
       type: Number,
       min: 0,
+    },
+    perkItem: {
+      type: String,
+    },
+    perkValue: {
+      type: Number,
+      min: [0, 'Perk value cannot be negative'],
+    },
+    perkDescription: {
+      type: String,
+    },
+    perkRestrictions: {
+      type: String,
     },
     monthlyUsageLimit: {
       type: Number,

@@ -22,7 +22,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const { id } = await params
     const body = await request.json()
-    const { name, percentage, companyName, minSpend, isActive, monthlyUsageLimit } = body
+    const {
+      name,
+      percentage,
+      companyName,
+      minSpend,
+      perkItem,
+      perkValue,
+      perkDescription,
+      perkRestrictions,
+      isActive,
+      monthlyUsageLimit
+    } = body
 
     await connectDB()
 
@@ -90,6 +101,61 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         )
       }
       discount.minSpend = minSpend
+    }
+
+    if (discount.type === DiscountType.COMPANY_PERK) {
+      if (companyName !== undefined) {
+        // Check for duplicate
+        const existingPerk = await Discount.findOne({
+          merchantId: merchant._id,
+          type: DiscountType.COMPANY_PERK,
+          companyName: { $regex: new RegExp(`^${companyName}$`, 'i') },
+          perkItem: perkItem || discount.perkItem,
+          _id: { $ne: discount._id },
+        })
+
+        if (existingPerk) {
+          return NextResponse.json(
+            { success: false, error: 'A perk with this item for this company already exists' },
+            { status: 400 }
+          )
+        }
+
+        discount.companyName = companyName
+      }
+
+      if (perkItem !== undefined) {
+        // Check for duplicate with new perk item
+        const existingPerk = await Discount.findOne({
+          merchantId: merchant._id,
+          type: DiscountType.COMPANY_PERK,
+          companyName: discount.companyName,
+          perkItem: { $regex: new RegExp(`^${perkItem}$`, 'i') },
+          _id: { $ne: discount._id },
+        })
+
+        if (existingPerk) {
+          return NextResponse.json(
+            { success: false, error: 'A perk with this item for this company already exists' },
+            { status: 400 }
+          )
+        }
+
+        discount.perkItem = perkItem
+      }
+
+      if (perkValue !== undefined) {
+        if (perkValue < 0) {
+          return NextResponse.json(
+            { success: false, error: 'Perk value cannot be negative' },
+            { status: 400 }
+          )
+        }
+        discount.perkValue = perkValue
+      }
+
+      if (perkDescription !== undefined) discount.perkDescription = perkDescription
+      if (perkRestrictions !== undefined) discount.perkRestrictions = perkRestrictions
     }
 
     // Update monthly usage limit

@@ -7,21 +7,29 @@ import Input from '@/components/ui/Input'
 
 interface Discount {
   _id: string
-  type: 'BASE' | 'COMPANY' | 'SPEND_THRESHOLD'
+  type: 'BASE' | 'COMPANY' | 'SPEND_THRESHOLD' | 'COMPANY_PERK'
   name: string
   percentage: number
   companyName?: string
   minSpend?: number
+  perkItem?: string
+  perkValue?: number
+  perkDescription?: string
+  perkRestrictions?: string
   monthlyUsageLimit?: number | null
   isActive: boolean
 }
 
 type DiscountFormData = {
-  type: 'BASE' | 'COMPANY' | 'SPEND_THRESHOLD'
+  type: 'BASE' | 'COMPANY' | 'SPEND_THRESHOLD' | 'COMPANY_PERK'
   name: string
   percentage: string
   companyName: string
   minSpend: string
+  perkItem: string
+  perkValue: string
+  perkDescription: string
+  perkRestrictions: string
   monthlyUsageLimit: string
 }
 
@@ -39,6 +47,10 @@ export default function DiscountsPage() {
     percentage: '',
     companyName: '',
     minSpend: '',
+    perkItem: '',
+    perkValue: '',
+    perkDescription: '',
+    perkRestrictions: '',
     monthlyUsageLimit: '',
   })
 
@@ -68,6 +80,10 @@ export default function DiscountsPage() {
       percentage: '',
       companyName: '',
       minSpend: '',
+      perkItem: '',
+      perkValue: '',
+      perkDescription: '',
+      perkRestrictions: '',
       monthlyUsageLimit: '',
     })
     setEditingId(null)
@@ -84,9 +100,16 @@ export default function DiscountsPage() {
       const payload = {
         type: formData.type,
         name: formData.name,
-        percentage: parseFloat(formData.percentage),
+        percentage: formData.type === 'COMPANY_PERK' ? 0 : parseFloat(formData.percentage),
         ...(formData.type === 'COMPANY' && { companyName: formData.companyName }),
         ...(formData.type === 'SPEND_THRESHOLD' && { minSpend: parseFloat(formData.minSpend) }),
+        ...(formData.type === 'COMPANY_PERK' && {
+          companyName: formData.companyName,
+          perkItem: formData.perkItem,
+          perkValue: formData.perkValue ? parseFloat(formData.perkValue) : undefined,
+          perkDescription: formData.perkDescription || undefined,
+          perkRestrictions: formData.perkRestrictions || undefined,
+        }),
         monthlyUsageLimit: formData.monthlyUsageLimit ? parseInt(formData.monthlyUsageLimit, 10) : null,
       }
 
@@ -123,6 +146,10 @@ export default function DiscountsPage() {
       percentage: discount.percentage.toString(),
       companyName: discount.companyName || '',
       minSpend: discount.minSpend?.toString() || '',
+      perkItem: discount.perkItem || '',
+      perkValue: discount.perkValue?.toString() || '',
+      perkDescription: discount.perkDescription || '',
+      perkRestrictions: discount.perkRestrictions || '',
       monthlyUsageLimit: discount.monthlyUsageLimit?.toString() || '',
     })
     setEditingId(discount._id)
@@ -178,6 +205,8 @@ export default function DiscountsPage() {
         return 'Company Discount'
       case 'SPEND_THRESHOLD':
         return 'Spend Threshold'
+      case 'COMPANY_PERK':
+        return 'Company Perk'
       default:
         return type
     }
@@ -191,6 +220,8 @@ export default function DiscountsPage() {
         return 'bg-purple-100 text-purple-800'
       case 'SPEND_THRESHOLD':
         return 'bg-green-100 text-green-800'
+      case 'COMPANY_PERK':
+        return 'bg-orange-100 text-orange-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -240,7 +271,7 @@ export default function DiscountsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Discount Type
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'BASE' })}
@@ -280,6 +311,21 @@ export default function DiscountsPage() {
                       <div className="font-medium text-gray-900">Spend</div>
                       <div className="text-xs text-gray-500">Order minimum</div>
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, type: 'COMPANY_PERK' })}
+                      className={`p-3 rounded-lg border-2 text-center transition-colors ${
+                        formData.type === 'COMPANY_PERK'
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="font-medium text-gray-900 flex items-center justify-center gap-1">
+                        <span>Perk</span>
+                        <span className="text-orange-500">🎁</span>
+                      </div>
+                      <div className="text-xs text-gray-500">Free item</div>
+                    </button>
                   </div>
                 </div>
               )}
@@ -287,7 +333,7 @@ export default function DiscountsPage() {
               {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Discount Name
+                  {formData.type === 'COMPANY_PERK' ? 'Perk Name' : 'Discount Name'}
                 </label>
                 <Input
                   type="text"
@@ -298,14 +344,16 @@ export default function DiscountsPage() {
                       ? 'e.g., Standard Employee Discount'
                       : formData.type === 'COMPANY'
                       ? 'e.g., Google Employee Special'
+                      : formData.type === 'COMPANY_PERK'
+                      ? 'e.g., Google Free Appetizer'
                       : 'e.g., Large Order Bonus'
                   }
                   required
                 />
               </div>
 
-              {/* Company Name (for COMPANY type) */}
-              {formData.type === 'COMPANY' && (
+              {/* Company Name (for COMPANY and COMPANY_PERK types) */}
+              {(formData.type === 'COMPANY' || formData.type === 'COMPANY_PERK') && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Company Name
@@ -318,7 +366,9 @@ export default function DiscountsPage() {
                     required
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    Employees from this company will receive this discount
+                    {formData.type === 'COMPANY_PERK'
+                      ? 'Employees from this company will receive this free perk'
+                      : 'Employees from this company will receive this discount'}
                   </p>
                 </div>
               )}
@@ -344,8 +394,95 @@ export default function DiscountsPage() {
                 </div>
               )}
 
-              {/* Percentage */}
-              <div>
+              {/* COMPANY_PERK specific fields */}
+              {formData.type === 'COMPANY_PERK' && (
+                <>
+                  {/* Perk Item */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Free Item <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      type="text"
+                      value={formData.perkItem}
+                      onChange={(e) => setFormData({ ...formData, perkItem: e.target.value })}
+                      placeholder="e.g., Free appetizer, Free dessert, Free drink"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      What free item will employees receive? (e.g., appetizer, dessert, drink, side)
+                    </p>
+                  </div>
+
+                  {/* Perk Value */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Item Value ($) <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <Input
+                      type="number"
+                      value={formData.perkValue}
+                      onChange={(e) => setFormData({ ...formData, perkValue: e.target.value })}
+                      placeholder="e.g., 8"
+                      min="0"
+                      step="0.01"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Estimated cost to you. Helps track perk expenses and ROI.
+                    </p>
+                  </div>
+
+                  {/* Perk Description */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Perk Description <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <Input
+                      type="text"
+                      value={formData.perkDescription}
+                      onChange={(e) => setFormData({ ...formData, perkDescription: e.target.value })}
+                      placeholder="e.g., Choose any appetizer from our menu"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Additional details shown to employees about what they can choose
+                    </p>
+                  </div>
+
+                  {/* Perk Restrictions */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Restrictions <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <Input
+                      type="text"
+                      value={formData.perkRestrictions}
+                      onChange={(e) => setFormData({ ...formData, perkRestrictions: e.target.value })}
+                      placeholder="e.g., Dine-in only, Lunch hours 11am-3pm"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Time, location, or other restrictions that apply
+                    </p>
+                  </div>
+
+                  {/* Strategic Nudge for COMPANY_PERK */}
+                  <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="flex gap-3">
+                      <span className="text-2xl">💡</span>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-orange-900 mb-1">Smart Tip: The Perk Strategy</h4>
+                        <p className="text-sm text-orange-800">
+                          Offering a free $8 appetizer can attract $50+ orders, giving you 500% ROI.
+                          Free items create memorable experiences and turn first-timers into regulars.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Percentage (not shown for COMPANY_PERK) */}
+              {formData.type !== 'COMPANY_PERK' && (
+                <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Discount Percentage (%)
                 </label>
@@ -360,6 +497,7 @@ export default function DiscountsPage() {
                   required
                 />
               </div>
+              )}
 
               {/* Monthly Usage Limit */}
               <div>
@@ -448,6 +586,12 @@ export default function DiscountsPage() {
                           {discount.type === 'SPEND_THRESHOLD' &&
                             `Orders over $${discount.minSpend}`}
                           {discount.type === 'BASE' && 'All verified employees'}
+                          {discount.type === 'COMPANY_PERK' && (
+                            <>
+                              Company: {discount.companyName} • {discount.perkItem}
+                              {discount.perkDescription && ` (${discount.perkDescription})`}
+                            </>
+                          )}
                           {discount.monthlyUsageLimit && (
                             <span className="ml-2 text-orange-600">
                               ({discount.monthlyUsageLimit}x/month limit)
@@ -457,9 +601,18 @@ export default function DiscountsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-2xl font-bold text-gray-900">
-                        {discount.percentage}%
-                      </span>
+                      {discount.type === 'COMPANY_PERK' ? (
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-orange-600">FREE</div>
+                          {discount.perkValue && (
+                            <div className="text-xs text-gray-500">(${discount.perkValue} value)</div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-2xl font-bold text-gray-900">
+                          {discount.percentage}%
+                        </span>
+                      )}
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleToggleActive(discount)}
@@ -544,6 +697,11 @@ export default function DiscountsPage() {
             <p>
               <strong className="text-gray-900">Company Discount:</strong> Overrides the base
               discount for employees from specific companies.
+            </p>
+            <p>
+              <strong className="text-gray-900">Company Perk:</strong> Offer free items (appetizers,
+              desserts, drinks) to employees from specific companies. Great for building partnerships
+              and attracting high-value corporate customers.
             </p>
             <p>
               <strong className="text-gray-900">Spend Threshold:</strong> Applies when order
