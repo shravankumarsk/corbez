@@ -83,6 +83,27 @@ export async function POST(request: NextRequest) {
       status: ReferralStatus.PENDING,
     })
 
+    // Update onboarding progress - first referral sent
+    try {
+      if (!user.onboardingProgress?.firstReferralSent) {
+        if (!user.onboardingProgress) {
+          user.onboardingProgress = {
+            emailVerified: false,
+            companyLinked: false,
+            firstDiscountClaimed: false,
+            firstDiscountUsed: false,
+            walletPassAdded: false,
+            firstReferralSent: false,
+          }
+        }
+        user.onboardingProgress.firstReferralSent = true
+        await user.save()
+      }
+    } catch (progressError) {
+      console.error('Failed to update onboarding progress:', progressError)
+      // Don't fail the referral if progress update fails
+    }
+
     // Build referral link
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3010'
     const referralLink = `${baseUrl}/register?ref=${user.referralCode}`

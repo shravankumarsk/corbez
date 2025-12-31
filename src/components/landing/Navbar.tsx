@@ -12,6 +12,7 @@ export default function Navbar() {
     { href: '/for-employees', label: 'For Employees' },
     { href: '/for-restaurants', label: 'For Restaurants' },
     { href: '/pricing', label: 'Pricing' },
+    { href: '/faq', label: 'FAQ' },
   ]
 
   return (

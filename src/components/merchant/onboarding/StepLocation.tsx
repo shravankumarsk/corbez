@@ -9,6 +9,7 @@ interface StepLocationProps {
     phone: string
   }
   onChange: (data: { address: string; city: string; state: string; zipCode: string; phone: string }) => void
+  isAutoFilled?: boolean
 }
 
 const US_STATES = [
@@ -65,7 +66,7 @@ const US_STATES = [
   { value: 'DC', label: 'District of Columbia' },
 ]
 
-export default function StepLocation({ data, onChange }: StepLocationProps) {
+export default function StepLocation({ data, onChange, isAutoFilled = false }: StepLocationProps) {
   const formatPhoneNumber = (value: string) => {
     const cleaned = value.replace(/\D/g, '')
     const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/)
@@ -90,6 +91,33 @@ export default function StepLocation({ data, onChange }: StepLocationProps) {
         <h2 className="text-2xl font-bold text-secondary mb-2">Where are you located?</h2>
         <p className="text-muted">Nearby employees will find you easily</p>
       </div>
+
+      {/* Auto-fill Success Indicator */}
+      {isAutoFilled && (
+        <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <svg
+              className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div>
+              <h3 className="font-semibold text-green-900 text-sm">Location auto-filled from Google Maps</h3>
+              <p className="text-xs text-green-700 mt-1">
+                Please verify the information below is correct
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div>
         <label htmlFor="address" className="block text-sm font-medium text-secondary mb-2">

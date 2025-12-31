@@ -22,6 +22,8 @@ export interface IDiscount extends Document {
   perkValue?: number // Estimated value in USD (for analytics)
   perkDescription?: string // "Choose any appetizer from menu"
   perkRestrictions?: string // "Dine-in only, lunch 11am-3pm"
+  // First-time user bonus (merchant decides extra % off)
+  firstTimeUserBonusPercentage?: number // Extra discount for user's first visit (e.g., 10% = 10% extra)
   // Usage limits
   monthlyUsageLimit?: number | null // null = unlimited
   // General settings
@@ -77,6 +79,12 @@ const discountSchema = new Schema<IDiscount>(
     },
     perkRestrictions: {
       type: String,
+    },
+    firstTimeUserBonusPercentage: {
+      type: Number,
+      default: 0,
+      min: [0, 'Bonus cannot be negative'],
+      max: [50, 'Bonus cannot exceed 50%'],
     },
     monthlyUsageLimit: {
       type: Number,

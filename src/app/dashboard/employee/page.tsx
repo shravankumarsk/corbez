@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import ResendVerificationButton from '@/components/auth/ResendVerificationButton'
+import { ActivationChecklistWrapper } from '@/components/employee/ActivationChecklistWrapper'
 
 export default async function EmployeeDashboard() {
   const session = await auth()
@@ -16,6 +17,9 @@ export default async function EmployeeDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Activation Checklist */}
+      <ActivationChecklistWrapper />
+
       {/* Verification Status */}
       <Card variant="bordered">
         <CardContent className="py-4">

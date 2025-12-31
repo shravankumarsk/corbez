@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { StepBasicInfo, StepLocation, StepBusinessMetrics } from '@/components/merchant/onboarding'
+import { PlaceData } from '@/components/merchant/GoogleMapsPlaceSearch'
 
 const STEPS = [
   { number: 1, title: 'Business Info' },
@@ -37,6 +38,7 @@ export default function MerchantOnboardingPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [placeData, setPlaceData] = useState<PlaceData | null>(null)
   const [formData, setFormData] = useState<FormData>({
     businessName: '',
     description: '',
@@ -57,6 +59,23 @@ export default function MerchantOnboardingPage() {
   useEffect(() => {
     checkOnboardingStatus()
   }, [])
+
+  // Auto-fill location data when place data is received from Google Maps
+  useEffect(() => {
+    if (placeData) {
+      setFormData((prev) => ({
+        ...prev,
+        address: placeData.address || prev.address,
+        city: placeData.city || prev.city,
+        state: placeData.state || prev.state,
+        zipCode: placeData.zipCode || prev.zipCode,
+        phone: placeData.phone || prev.phone,
+        priceTier: placeData.priceLevel
+          ? ['', '$', '$$', '$$$', '$$$$'][placeData.priceLevel] || prev.priceTier
+          : prev.priceTier,
+      }))
+    }
+  }, [placeData])
 
   const checkOnboardingStatus = async () => {
     try {
@@ -312,6 +331,7 @@ export default function MerchantOnboardingPage() {
                 categories: formData.categories,
               }}
               onChange={(data) => setFormData({ ...formData, ...data })}
+              onPlaceDataChange={setPlaceData}
             />
           )}
 
@@ -325,6 +345,7 @@ export default function MerchantOnboardingPage() {
                 phone: formData.phone,
               }}
               onChange={(data) => setFormData({ ...formData, ...data })}
+              isAutoFilled={!!placeData}
             />
           )}
 

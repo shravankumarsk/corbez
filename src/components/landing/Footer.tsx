@@ -7,9 +7,11 @@ const footerLinks = {
     { href: '/for-employees', label: 'For Employees' },
     { href: '/for-restaurants', label: 'For Restaurants' },
     { href: '/pricing', label: 'Pricing' },
+    { href: '/faq', label: 'FAQ' },
   ],
   company: [
     { href: '/about', label: 'About Us' },
+    { href: '/refer-a-restaurant', label: 'Refer a Restaurant' },
     { href: '/contact', label: 'Contact' },
     { href: '/careers', label: 'Careers' },
     { href: '/blog', label: 'Blog' },

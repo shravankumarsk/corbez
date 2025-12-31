@@ -1,0 +1,203 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth/auth'
+import { connectDB } from '@/lib/db/mongoose'
+import { Merchant } from '@/lib/db/models/merchant.model'
+import {
+  MerchantReferral,
+  MerchantReferralStatus,
+} from '@/lib/db/models/merchant-referral.model'
+
+interface RouteParams {
+  params: Promise<{ id: string }>
+}
+
+// GET - Get a specific referral
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  try {
+    const session = await auth()
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const { id } = await params
+
+    await connectDB()
+
+    // Get merchant
+    const merchant = await Merchant.findOne({ userId: session.user.id })
+
+    if (!merchant) {
+      return NextResponse.json(
+        { success: false, error: 'Merchant profile not found' },
+        { status: 404 }
+      )
+    }
+
+    // Find the referral
+    const referral = await MerchantReferral.findOne({
+      _id: id,
+      referrerMerchantId: merchant._id,
+    })
+      .populate('referredMerchantId', 'businessName contactEmail')
+      .lean()
+
+    if (!referral) {
+      return NextResponse.json(
+        { success: false, error: 'Referral not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      referral,
+    })
+  } catch (error) {
+    console.error('Failed to fetch referral:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch referral' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH - Update referral status or details
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  try {
+    const session = await auth()
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const { id } = await params
+    const body = await request.json()
+    const { status, internalNotes, claimReward } = body
+
+    await connectDB()
+
+    // Get merchant
+    const merchant = await Merchant.findOne({ userId: session.user.id })
+
+    if (!merchant) {
+      return NextResponse.json(
+        { success: false, error: 'Merchant profile not found' },
+        { status: 404 }
+      )
+    }
+
+    // Find the referral
+    const referral = await MerchantReferral.findOne({
+      _id: id,
+      referrerMerchantId: merchant._id,
+    })
+
+    if (!referral) {
+      return NextResponse.json(
+        { success: false, error: 'Referral not found' },
+        { status: 404 }
+      )
+    }
+
+    // Update status if provided
+    if (status && Object.values(MerchantReferralStatus).includes(status)) {
+      await referral.updateStatus(status)
+    }
+
+    // Update internal notes if provided (admin only - add role check if needed)
+    if (internalNotes !== undefined) {
+      referral.internalNotes = internalNotes
+    }
+
+    // Claim reward if requested
+    if (claimReward && referral.isVerified && !referral.referrerRewardClaimed) {
+      await referral.claimReferrerReward()
+      // TODO: Apply credit to merchant's Stripe subscription
+    }
+
+    await referral.save()
+
+    return NextResponse.json({
+      success: true,
+      referral,
+    })
+  } catch (error) {
+    console.error('Failed to update referral:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to update referral' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE - Delete a referral (only if still pending)
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const session = await auth()
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const { id } = await params
+
+    await connectDB()
+
+    // Get merchant
+    const merchant = await Merchant.findOne({ userId: session.user.id })
+
+    if (!merchant) {
+      return NextResponse.json(
+        { success: false, error: 'Merchant profile not found' },
+        { status: 404 }
+      )
+    }
+
+    // Find the referral
+    const referral = await MerchantReferral.findOne({
+      _id: id,
+      referrerMerchantId: merchant._id,
+    })
+
+    if (!referral) {
+      return NextResponse.json(
+        { success: false, error: 'Referral not found' },
+        { status: 404 }
+      )
+    }
+
+    // Only allow deletion if still pending
+    if (referral.status !== MerchantReferralStatus.PENDING) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Cannot delete referral that has already been processed',
+        },
+        { status: 400 }
+      )
+    }
+
+    await referral.deleteOne()
+
+    return NextResponse.json({
+      success: true,
+      message: 'Referral deleted successfully',
+    })
+  } catch (error) {
+    console.error('Failed to delete referral:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete referral' },
+      { status: 500 }
+    )
+  }
+}

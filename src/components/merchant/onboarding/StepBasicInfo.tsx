@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { GoogleMapsPlaceSearch, PlaceData } from '@/components/merchant/GoogleMapsPlaceSearch'
 
 interface Category {
   _id: string
@@ -16,15 +17,31 @@ interface StepBasicInfoProps {
     categories: string[]
   }
   onChange: (data: { businessName: string; description: string; categories: string[] }) => void
+  onPlaceDataChange?: (placeData: PlaceData | null) => void
 }
 
-export default function StepBasicInfo({ data, onChange }: StepBasicInfoProps) {
+export default function StepBasicInfo({ data, onChange, onPlaceDataChange }: StepBasicInfoProps) {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const [showManualEntry, setShowManualEntry] = useState(false)
 
   useEffect(() => {
     fetchCategories()
   }, [])
+
+  const handlePlaceSelected = (placeData: PlaceData) => {
+    // Auto-fill business name
+    onChange({ ...data, businessName: placeData.name })
+
+    // Pass place data to parent for use in Step 2 (location)
+    if (onPlaceDataChange) {
+      onPlaceDataChange(placeData)
+    }
+
+    // Auto-map Google Maps types to categories if possible
+    // This is optional - could be enhanced later
+    setShowManualEntry(true)
+  }
 
   const fetchCategories = async () => {
     try {
@@ -53,6 +70,41 @@ export default function StepBasicInfo({ data, onChange }: StepBasicInfoProps) {
         <h2 className="text-2xl font-bold text-secondary mb-2">Tell us about your business</h2>
         <p className="text-muted">Help corporate employees discover you</p>
       </div>
+
+      {/* Google Maps Search - Quick Auto-Fill */}
+      {!showManualEntry && (
+        <div className="bg-primary/5 border-2 border-primary/20 rounded-xl p-6">
+          <div className="flex items-start gap-3 mb-4">
+            <svg
+              className="w-6 h-6 text-primary flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+            <div>
+              <h3 className="font-semibold text-secondary mb-1">Quick Auto-Fill (Recommended)</h3>
+              <p className="text-sm text-muted">
+                Search for your restaurant on Google Maps to automatically fill your business details
+              </p>
+            </div>
+          </div>
+          <GoogleMapsPlaceSearch onPlaceSelected={handlePlaceSelected} />
+          <button
+            type="button"
+            onClick={() => setShowManualEntry(true)}
+            className="mt-4 text-sm text-primary hover:text-primary-dark font-medium"
+          >
+            Or enter manually →
+          </button>
+        </div>
+      )}
 
       <div>
         <label htmlFor="businessName" className="block text-sm font-medium text-secondary mb-2">

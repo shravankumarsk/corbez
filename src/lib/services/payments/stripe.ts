@@ -207,6 +207,118 @@ export interface SubscriptionInfo {
 }
 
 /**
+ * Apply referral reward credits to merchant subscription
+ * Extends subscription by number of free months earned
+ */
+export async function applyReferralReward(
+  subscriptionId: string,
+  monthsToAdd: number,
+  referralId: string
+): Promise<Stripe.Subscription> {
+  const stripe = getStripeClient()
+
+  // Get current subscription
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+
+  // Calculate new period end (add months to current period end)
+  const currentPeriodEnd = new Date((subscription.current_period_end || 0) * 1000)
+  const newPeriodEnd = new Date(currentPeriodEnd)
+  newPeriodEnd.setMonth(newPeriodEnd.getMonth() + monthsToAdd)
+
+  // Update subscription with extended period and metadata
+  const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+    trial_end: Math.floor(newPeriodEnd.getTime() / 1000),
+    proration_behavior: 'none',
+    metadata: {
+      ...subscription.metadata,
+      [`referral_reward_${referralId}`]: `${monthsToAdd} months`,
+      last_referral_reward: new Date().toISOString(),
+    },
+  })
+
+  return updatedSubscription
+}
+
+/**
+ * Track referral reward in Stripe customer metadata
+ */
+export async function trackReferralReward(
+  customerId: string,
+  merchantId: string,
+  referralId: string,
+  monthsEarned: number
+): Promise<Stripe.Customer> {
+  const stripe = getStripeClient()
+
+  const customer = await stripe.customers.retrieve(customerId)
+
+  if (customer.deleted) {
+    throw new Error('Customer has been deleted')
+  }
+
+  const currentReferralMonths = parseInt(customer.metadata?.total_referral_months || '0')
+  const totalReferralMonths = currentReferralMonths + monthsEarned
+
+  return stripe.customers.update(customerId, {
+    metadata: {
+      ...customer.metadata,
+      merchantId,
+      total_referral_months: totalReferralMonths.toString(),
+      last_referral_id: referralId,
+      last_referral_date: new Date().toISOString(),
+    },
+  })
+}
+
+/**
+ * Check if merchant has reached annual referral reward cap
+ */
+export async function checkReferralRewardCap(
+  customerId: string
+): Promise<{ canClaim: boolean; monthsEarnedThisYear: number; remainingMonths: number }> {
+  const stripe = getStripeClient()
+  const customer = await stripe.customers.retrieve(customerId)
+
+  if (customer.deleted) {
+    throw new Error('Customer has been deleted')
+  }
+
+  // Get all subscriptions for this customer
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    limit: 100,
+  })
+
+  // Calculate months earned this year from metadata
+  const currentYear = new Date().getFullYear()
+  let monthsEarnedThisYear = 0
+
+  for (const sub of subscriptions.data) {
+    for (const [key, value] of Object.entries(sub.metadata || {})) {
+      if (key.startsWith('referral_reward_') && value) {
+        const rewardDate = sub.metadata?.last_referral_reward
+        if (rewardDate && new Date(rewardDate).getFullYear() === currentYear) {
+          const months = parseInt(value.split(' ')[0])
+          if (!isNaN(months)) {
+            monthsEarnedThisYear += months
+          }
+        }
+      }
+    }
+  }
+
+  const MAX_ANNUAL_REWARD_MONTHS = 12
+  const remainingMonths = Math.max(0, MAX_ANNUAL_REWARD_MONTHS - monthsEarnedThisYear)
+  const canClaim = monthsEarnedThisYear < MAX_ANNUAL_REWARD_MONTHS
+
+  return {
+    canClaim,
+    monthsEarnedThisYear,
+    remainingMonths,
+  }
+}
+
+/**
  * Parse subscription from Stripe event
  */
 export function parseSubscriptionInfo(

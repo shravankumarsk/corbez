@@ -28,6 +28,18 @@ export interface IUser extends Document {
   // Referral system
   referralCode?: string
   referredBy?: string  // referralCode of the user who referred them
+  accountCredits: number // Earned credits in cents (e.g., 1000 = $10)
+
+  // Onboarding progress (for activation tracking)
+  onboardingProgress?: {
+    emailVerified: boolean
+    companyLinked: boolean
+    firstDiscountClaimed: boolean
+    firstDiscountUsed: boolean
+    walletPassAdded: boolean
+    firstReferralSent: boolean
+    completedAt?: Date
+  }
 
   role: UserRole
   emailVerified: boolean
@@ -114,6 +126,40 @@ const userSchema = new Schema<IUser>(
     referredBy: {
       type: String,  // referralCode of referrer
       index: true,
+    },
+    accountCredits: {
+      type: Number,
+      default: 0,
+      min: [0, 'Credits cannot be negative'],
+    },
+    onboardingProgress: {
+      emailVerified: {
+        type: Boolean,
+        default: false,
+      },
+      companyLinked: {
+        type: Boolean,
+        default: false,
+      },
+      firstDiscountClaimed: {
+        type: Boolean,
+        default: false,
+      },
+      firstDiscountUsed: {
+        type: Boolean,
+        default: false,
+      },
+      walletPassAdded: {
+        type: Boolean,
+        default: false,
+      },
+      firstReferralSent: {
+        type: Boolean,
+        default: false,
+      },
+      completedAt: {
+        type: Date,
+      },
     },
     role: {
       type: String,

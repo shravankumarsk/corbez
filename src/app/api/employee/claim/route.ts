@@ -90,6 +90,30 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Update onboarding progress - first discount claimed
+    try {
+      const { User } = await import('@/lib/db/models/user.model')
+      const user = await User.findById(session.user.id)
+
+      if (user && !user.onboardingProgress?.firstDiscountClaimed) {
+        if (!user.onboardingProgress) {
+          user.onboardingProgress = {
+            emailVerified: false,
+            companyLinked: false,
+            firstDiscountClaimed: false,
+            firstDiscountUsed: false,
+            walletPassAdded: false,
+            firstReferralSent: false,
+          }
+        }
+        user.onboardingProgress.firstDiscountClaimed = true
+        await user.save()
+      }
+    } catch (progressError) {
+      console.error('Failed to update onboarding progress:', progressError)
+      // Don't fail the claim if progress update fails
+    }
+
     return NextResponse.json({
       success: true,
       coupon: {

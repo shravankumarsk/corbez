@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       role,
       inviteCode,
       referralCode,
+      suggestedCompanyId, // Smart company detection
       // Company Admin fields
       companyName,
       companyCity,
@@ -76,6 +77,36 @@ export async function POST(request: NextRequest) {
 
     // Validate invite code if provided (for employees)
     let validatedInvite = null
+    let suggestedCompany = null
+
+    // Smart company detection - validate suggested company
+    if (suggestedCompanyId && role === UserRole.EMPLOYEE) {
+      const emailDomain = email.toLowerCase().split('@')[1]
+
+      const company = await Company.findById(suggestedCompanyId)
+      if (!company) {
+        return NextResponse.json({ message: 'Invalid company suggestion' }, { status: 400 })
+      }
+
+      // Verify email domain matches
+      if (company.settings.emailDomain !== emailDomain) {
+        return NextResponse.json(
+          { message: 'Email domain does not match company' },
+          { status: 400 }
+        )
+      }
+
+      // Don't allow joining suspended companies
+      if (company.status === CompanyStatus.SUSPENDED) {
+        return NextResponse.json(
+          { message: 'This company is not currently accepting new members' },
+          { status: 400 }
+        )
+      }
+
+      suggestedCompany = company
+    }
+
     if (inviteCode && role === UserRole.EMPLOYEE) {
       const invite = await InviteCode.findOne({
         code: inviteCode.toUpperCase().replace(/\s/g, ''),
@@ -129,7 +160,7 @@ export async function POST(request: NextRequest) {
         firstName: string
         lastName: string
         status: EmployeeStatus
-        companyId?: typeof validatedInvite.companyId
+        companyId?: typeof validatedInvite.companyId | typeof suggestedCompany._id
         invitedBy?: typeof validatedInvite.createdBy
         invitedAt?: Date
         joinedAt?: Date
@@ -137,15 +168,25 @@ export async function POST(request: NextRequest) {
         userId: user._id,
         firstName,
         lastName,
-        status: validatedInvite ? EmployeeStatus.ACTIVE : EmployeeStatus.PENDING,
+        status: EmployeeStatus.PENDING, // Default to pending
       }
 
-      // If registered with invite code, link to company
+      // Priority 1: If registered with invite code, link to company
       if (validatedInvite) {
         employeeData.companyId = validatedInvite.companyId
         employeeData.invitedBy = validatedInvite.createdBy
         employeeData.invitedAt = validatedInvite.createdAt
         employeeData.joinedAt = new Date()
+        employeeData.status = EmployeeStatus.ACTIVE
+      }
+      // Priority 2: If registered with suggested company, link to it
+      else if (suggestedCompany) {
+        employeeData.companyId = suggestedCompany._id
+        employeeData.joinedAt = new Date()
+        // Auto-approve if company has autoApproveEmployees enabled
+        employeeData.status = suggestedCompany.settings.autoApproveEmployees
+          ? EmployeeStatus.ACTIVE
+          : EmployeeStatus.PENDING
       }
 
       await Employee.create(employeeData)

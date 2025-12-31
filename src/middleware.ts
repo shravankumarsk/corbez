@@ -24,6 +24,10 @@ const publicRoutes = [
   '/for-restaurants',
   '/how-it-works',
   '/contact',
+  '/careers',
+  '/blog',
+  '/faq',
+  '/refer-a-restaurant',
 ]
 
 // Auth routes - redirect to dashboard if already logged in

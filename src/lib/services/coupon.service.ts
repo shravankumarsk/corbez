@@ -253,11 +253,17 @@ class CouponService {
     code: string,
     merchantId: string,
     notes?: string
-  ): Promise<{ success: boolean; error?: string; usageRemaining?: number | null }> {
+  ): Promise<{
+    success: boolean
+    error?: string
+    usageRemaining?: number | null
+    appliedBonus?: number
+    totalDiscount?: number
+  }> {
     await connectDB()
 
     const coupon = await ClaimedCoupon.findOne({ uniqueCode: code })
-      .populate('dealId', 'monthlyUsageLimit')
+      .populate('dealId', 'monthlyUsageLimit percentage firstTimeUserBonusPercentage')
 
     if (!coupon) {
       return { success: false, error: 'Coupon not found' }
@@ -287,6 +293,24 @@ class CouponService {
     // Get discount for monthly limit check
     const discount = coupon.dealId as unknown as IDiscount
     const monthlyLimit = discount?.monthlyUsageLimit
+    const baseDiscountPercentage = discount?.percentage || 0
+    const firstTimeBonusPercentage = discount?.firstTimeUserBonusPercentage || 0
+
+    // Check if this is user's FIRST EVER redemption (any restaurant)
+    const isFirstTimeUser = await ClaimedCoupon.countDocuments({
+      employeeId: coupon.employeeId,
+      status: CouponStatus.ACTIVE,
+      usageHistory: { $exists: true, $not: { $size: 0 } },
+    }) === 0
+
+    // Calculate total discount (base + first-time bonus if applicable)
+    let totalDiscountPercentage = baseDiscountPercentage
+    let appliedBonusPercentage = 0
+
+    if (isFirstTimeUser && firstTimeBonusPercentage > 0) {
+      appliedBonusPercentage = firstTimeBonusPercentage
+      totalDiscountPercentage = Math.min(baseDiscountPercentage + firstTimeBonusPercentage, 100)
+    }
 
     // Reset monthly counter if month changed
     const currentMonth = getCurrentMonth()
@@ -333,10 +357,78 @@ class CouponService {
       })
     )
 
+    // Award referral credits on first redemption
+    try {
+      // Check if this is the user's first redemption
+      const totalRedemptions = await ClaimedCoupon.countDocuments({
+        employeeId: coupon.employeeId,
+        status: CouponStatus.ACTIVE,
+        usageHistory: { $exists: true, $not: { $size: 0 } },
+      })
+
+      // If this is their first redemption
+      if (totalRedemptions === 1) {
+        const { User } = await import('@/lib/db/models/user.model')
+        const employee = await Employee.findById(coupon.employeeId)
+
+        if (employee) {
+          const user = await User.findById(employee.userId)
+
+          // If user was referred by someone, award credit to referrer
+          if (user?.referredBy) {
+            const referrer = await User.findOne({ referralCode: user.referredBy })
+
+            if (referrer) {
+              // Award 100 Corbez Points (not real money - just gamification points)
+              referrer.accountCredits = (referrer.accountCredits || 0) + 100
+              await referrer.save()
+
+              // Emit referral points earned event
+              eventBus.emitAsync(
+                createEvent.custom({
+                  type: 'REFERRAL_POINTS_EARNED',
+                  payload: {
+                    referrerId: referrer._id.toString(),
+                    referredUserId: user._id.toString(),
+                    pointsEarned: 100,
+                    earnedAt: new Date(),
+                  },
+                })
+              )
+            }
+          }
+
+          // Update onboarding progress - first discount used
+          if (user && !user.onboardingProgress?.firstDiscountUsed) {
+            if (!user.onboardingProgress) {
+              user.onboardingProgress = {
+                emailVerified: false,
+                companyLinked: false,
+                firstDiscountClaimed: false,
+                firstDiscountUsed: false,
+                walletPassAdded: false,
+                firstReferralSent: false,
+              }
+            }
+            user.onboardingProgress.firstDiscountUsed = true
+            await user.save()
+          }
+        }
+      }
+    } catch (error) {
+      // Don't fail redemption if credit award fails
+      console.error('Failed to award referral credit:', error)
+    }
+
     // Invalidate cache
     await cache.del(`coupon:code:${code}`)
 
-    return { success: true, usageRemaining }
+    return {
+      success: true,
+      usageRemaining,
+      appliedBonus: appliedBonusPercentage,
+      totalDiscount: totalDiscountPercentage,
+    }
   }
 
   /**
@@ -427,6 +519,30 @@ class CouponService {
       signature: qrResult.data.signature,
       status: PassStatus.ACTIVE,
     })
+
+    // Update onboarding progress - wallet pass added
+    try {
+      const { User } = await import('@/lib/db/models/user.model')
+      const user = await User.findById(userId)
+
+      if (user && !user.onboardingProgress?.walletPassAdded) {
+        if (!user.onboardingProgress) {
+          user.onboardingProgress = {
+            emailVerified: false,
+            companyLinked: false,
+            firstDiscountClaimed: false,
+            firstDiscountUsed: false,
+            walletPassAdded: false,
+            firstReferralSent: false,
+          }
+        }
+        user.onboardingProgress.walletPassAdded = true
+        await user.save()
+      }
+    } catch (progressError) {
+      console.error('Failed to update onboarding progress:', progressError)
+      // Don't fail pass creation if progress update fails
+    }
 
     return pass
   }
