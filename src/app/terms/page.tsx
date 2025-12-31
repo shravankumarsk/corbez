@@ -1,8 +1,28 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | Corbez',
-  description: 'Terms of Service for Corbez - Corporate Benefits Marketplace',
+  title: 'Terms of Service - User Agreement & Legal Terms',
+  description: 'Corbez Terms of Service: User agreements for employees, restaurants, and companies. Learn about discount terms, prohibited activities, and your rights and responsibilities.',
+  keywords: [
+    'terms of service',
+    'user agreement',
+    'terms and conditions',
+    'legal terms',
+    'service terms',
+  ],
+  openGraph: {
+    title: 'Corbez Terms of Service',
+    description: 'Read our Terms of Service to understand your rights and responsibilities when using Corbez.',
+    url: 'https://corbez.com/terms',
+    type: 'website',
+  },
+  alternates: {
+    canonical: 'https://corbez.com/terms',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function TermsOfServicePage() {

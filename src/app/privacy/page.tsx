@@ -1,8 +1,29 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Corbez',
-  description: 'Privacy Policy for Corbez - Corporate Benefits Marketplace',
+  title: 'Privacy Policy - GDPR & CCPA Compliant Data Protection',
+  description: 'Corbez Privacy Policy: Learn how we collect, use, and protect your data. GDPR and CCPA compliant. Your rights: access, deletion, portability. We never sell your data.',
+  keywords: [
+    'privacy policy',
+    'GDPR compliance',
+    'CCPA compliance',
+    'data protection',
+    'user privacy',
+    'data security',
+  ],
+  openGraph: {
+    title: 'Corbez Privacy Policy - Your Data, Your Rights',
+    description: 'GDPR & CCPA compliant privacy policy. We never sell your data.',
+    url: 'https://corbez.com/privacy',
+    type: 'website',
+  },
+  alternates: {
+    canonical: 'https://corbez.com/privacy',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function PrivacyPolicyPage() {

@@ -1,5 +1,30 @@
 import { Navbar, Footer } from '@/components/landing'
 import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'For Employees - Free Restaurant Discounts with Your Work Email',
+  description: 'Get up to 30% off at local restaurants. Free forever. Just verify your work email, claim discounts, and show your QR code. No app downloads, no complicated sign-ups.',
+  keywords: [
+    'employee discounts',
+    'corporate perks',
+    'free employee benefits',
+    'work email discounts',
+    'restaurant savings',
+    'corporate dining benefits',
+    'lunch discounts',
+    'employee perks program',
+  ],
+  openGraph: {
+    title: 'Free Restaurant Discounts for Corporate Employees | Corbez',
+    description: 'Save up to 30% at local restaurants with just your work email. Free forever. No apps, no hassle.',
+    url: 'https://corbez.com/for-employees',
+    type: 'website',
+  },
+  alternates: {
+    canonical: 'https://corbez.com/for-employees',
+  },
+}
 
 const steps = [
   {

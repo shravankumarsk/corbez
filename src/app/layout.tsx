@@ -4,8 +4,65 @@ import CookieConsent from '@/components/common/CookieConsent'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'corbez - Corporate Benefits',
-  description: 'Your company badge just became your favorite restaurant\'s VIP pass. Corporate discounts made simple.',
+  metadataBase: new URL('https://corbez.com'),
+  title: {
+    default: 'Corbez - Corporate Restaurant Discounts & Employee Benefits',
+    template: '%s | Corbez',
+  },
+  description: 'Transform your employee badge into exclusive restaurant discounts. Corbez connects corporate employees with local restaurants offering up to 30% off. No coupons to print, no apps to download - just show your QR code.',
+  keywords: [
+    'corporate discounts',
+    'employee benefits',
+    'restaurant discounts',
+    'corporate perks',
+    'employee discounts',
+    'lunch benefits',
+    'corporate dining',
+    'QR code discounts',
+    'local restaurant deals',
+    'employee wellness',
+    'corporate benefits platform',
+    'B2B benefits',
+    'employee engagement',
+    'workplace perks',
+  ],
+  authors: [{ name: 'Corbez' }],
+  creator: 'Corbez',
+  publisher: 'Corbez',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://corbez.com',
+    siteName: 'Corbez',
+    title: 'Corbez - Corporate Restaurant Discounts & Employee Benefits',
+    description: 'Transform your employee badge into exclusive restaurant discounts. Up to 30% off at local restaurants with just your QR code.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Corbez - Corporate Benefits Platform',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Corbez - Corporate Restaurant Discounts',
+    description: 'Transform your employee badge into exclusive restaurant discounts. Up to 30% off at local restaurants.',
+    images: ['/og-image.png'],
+    creator: '@corbez',
+  },
   icons: {
     icon: [
       { url: '/favicon.png', sizes: '48x48', type: 'image/png' },
@@ -18,6 +75,13 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/manifest.json',
+  alternates: {
+    canonical: 'https://corbez.com',
+  },
+  verification: {
+    google: 'your-google-verification-code',
+    // Add actual verification codes when available
+  },
 }
 
 export default function RootLayout({

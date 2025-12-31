@@ -1,5 +1,30 @@
 import { Navbar, Footer } from '@/components/landing'
 import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'For Restaurants - Attract Corporate Customers with Exclusive Discounts',
+  description: 'Partner with Corbez to reach thousands of corporate employees. 6-month free trial, then just $9.99/month. No per-transaction fees. Fill empty tables during slow hours.',
+  keywords: [
+    'restaurant partnership',
+    'corporate catering',
+    'restaurant marketing',
+    'attract corporate customers',
+    'business lunch discounts',
+    'restaurant revenue',
+    'corporate dining program',
+    'employee lunch deals',
+  ],
+  openGraph: {
+    title: 'Restaurant Partnerships - Fill Empty Tables with Corporate Customers',
+    description: 'Join Corbez and attract corporate employees. 6 months free, $9.99/month after. No transaction fees.',
+    url: 'https://corbez.com/for-restaurants',
+    type: 'website',
+  },
+  alternates: {
+    canonical: 'https://corbez.com/for-restaurants',
+  },
+}
 
 const steps = [
   {

@@ -13,6 +13,7 @@ import {
   CTASection,
   Footer,
 } from '@/components/landing'
+import StructuredData, { organizationSchema, websiteSchema } from '@/components/seo/StructuredData'
 
 export default function Home() {
   const { data: session } = useSession()
@@ -85,16 +86,20 @@ export default function Home() {
 
   // Public landing page
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <Hero />
-      <HowItWorks />
-      <Benefits />
-      <Stats />
-      <Testimonials />
-      <Pricing />
-      <CTASection />
-      <Footer />
-    </div>
+    <>
+      <StructuredData data={organizationSchema} />
+      <StructuredData data={websiteSchema} />
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <Hero />
+        <HowItWorks />
+        <Benefits />
+        <Stats />
+        <Testimonials />
+        <Pricing />
+        <CTASection />
+        <Footer />
+      </div>
+    </>
   )
 }

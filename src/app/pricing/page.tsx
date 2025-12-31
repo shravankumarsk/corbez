@@ -1,5 +1,28 @@
 import { Navbar, Footer, Pricing } from '@/components/landing'
 import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Pricing - Start Free for 6 Months',
+  description: 'Restaurant pricing starts at $9.99/month after a 6-month free trial. No setup fees, no per-transaction charges. Cancel anytime. Free forever for employees.',
+  keywords: [
+    'restaurant pricing',
+    'corporate discount pricing',
+    'employee benefits pricing',
+    'free trial',
+    'restaurant subscription',
+    'no transaction fees',
+  ],
+  openGraph: {
+    title: 'Corbez Pricing - Free 6-Month Trial for Restaurants',
+    description: 'Only $9.99/month for restaurants. Unlimited employee verifications, no transaction fees. Free for employees forever.',
+    url: 'https://corbez.com/pricing',
+    type: 'website',
+  },
+  alternates: {
+    canonical: 'https://corbez.com/pricing',
+  },
+}
 
 const faqs = [
   {

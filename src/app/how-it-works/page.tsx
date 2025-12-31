@@ -1,5 +1,28 @@
 import { Navbar, Footer } from '@/components/landing'
 import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'How It Works - Simple Steps for Employees & Restaurants',
+  description: 'Learn how Corbez works in 3 easy steps. Employees: Sign up, claim discounts, show QR code. Restaurants: Register, create offers, verify customers. No apps, no hassle.',
+  keywords: [
+    'how it works',
+    'employee discounts how to',
+    'QR code discounts',
+    'claim restaurant discount',
+    'corporate benefits guide',
+    'restaurant partnership',
+  ],
+  openGraph: {
+    title: 'How Corbez Works - Employee Discounts Made Simple',
+    description: 'Sign up → Claim discount → Show QR code → Save money. It takes 30 seconds.',
+    url: 'https://corbez.com/how-it-works',
+    type: 'website',
+  },
+  alternates: {
+    canonical: 'https://corbez.com/how-it-works',
+  },
+}
 
 const employeeSteps = [
   {
