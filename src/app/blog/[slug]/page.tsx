@@ -11,9 +11,9 @@ import { getPostBySlug, getRelatedPosts, getAllPosts } from '@/lib/content/blog-
 import BlogContent from './BlogContent'
 
 interface PageProps {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 // Generate static params for all blog posts
@@ -26,7 +26,8 @@ export async function generateStaticParams() {
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const post = getPostBySlug(params.slug)
+  const { slug } = await params
+  const post = getPostBySlug(slug)
 
   if (!post) {
     return {
@@ -70,14 +71,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default function BlogPostPage({ params }: PageProps) {
-  const post = getPostBySlug(params.slug)
+export default async function BlogPostPage({ params }: PageProps) {
+  const { slug } = await params
+  const post = getPostBySlug(slug)
 
   if (!post) {
     notFound()
   }
 
-  const relatedPosts = getRelatedPosts(post.slug, 3)
+  const relatedPosts = getRelatedPosts(slug, 3)
 
   // Determine CTA variant based on category
   const ctaVariant = post.category === 'restaurants' ? 'restaurant' :
