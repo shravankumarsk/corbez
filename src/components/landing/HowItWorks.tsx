@@ -101,7 +101,7 @@ export default function HowItWorks() {
                     : 'text-muted hover:text-secondary'
                 }`}
               >
-                I Work Here
+                I Work for a Company
               </button>
               <button
                 onClick={() => setActiveTab('restaurants')}
