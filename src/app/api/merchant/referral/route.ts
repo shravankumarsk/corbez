@@ -12,6 +12,7 @@ import {
   sendRefereeInvitationEmail,
   sendInternalReferralNotificationEmail,
 } from '@/lib/services/email/merchant-referral-emails'
+import { requireActiveSubscription } from '@/lib/middleware/subscription-guard'
 
 // Validation schema for referral submission
 const referralSchema = z.object({
@@ -195,7 +196,7 @@ export async function POST(request: NextRequest) {
         referredBusinessName: data.referredBusinessName,
         referredContactName: data.referredContactName,
         referrerBusinessName: referrer.businessName,
-        referrerName: session.user.name,
+        referrerName: session.user.name || undefined,
       }),
       sendInternalReferralNotificationEmail({
         referrerBusinessName: referrer.businessName,
@@ -232,28 +233,13 @@ export async function POST(request: NextRequest) {
 }
 
 // GET - List all referrals for the authenticated merchant
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    // Check subscription status - merchant must have active subscription
+    const { merchant, error } = await requireActiveSubscription(request)
+    if (error) return error
 
     await connectDB()
-
-    // Get merchant
-    const merchant = await Merchant.findOne({ userId: session.user.id })
-
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, error: 'Merchant profile not found' },
-        { status: 404 }
-      )
-    }
 
     // Get all referrals made by this merchant
     const referrals = await MerchantReferral.find({

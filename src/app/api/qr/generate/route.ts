@@ -2,14 +2,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/auth'
 import { generateVerificationToken, generateQRCodeURL } from '@/lib/services/qr/token-generator'
 import QRCode from 'qrcode'
-import { rateLimiters } from '@/lib/security/rate-limiter'
+import { checkRateLimit, rateLimitConfigs } from '@/lib/middleware/rate-limit'
 
 export async function GET(request: NextRequest) {
   try {
-    // Apply rate limiting - prevent QR code spam
-    const rateLimitResponse = await rateLimiters.api(request)
-    if (rateLimitResponse) {
-      return rateLimitResponse
+    // SECURITY: Redis-based rate limiting - prevent QR code spam
+    const rateLimitResult = await checkRateLimit(request, rateLimitConfigs.default)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: rateLimitConfigs.default.message,
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimitResult.reset),
+          },
+        }
+      )
     }
 
     const session = await auth()

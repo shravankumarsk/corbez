@@ -33,6 +33,12 @@ export async function initializeScheduledJobs(): Promise<void> {
     '0 * * * *'
   )
 
+  // Send trial expiration reminders - run daily at 10 AM
+  await scheduleJob(JobType.SEND_TRIAL_EXPIRATION_REMINDERS, {}, '0 10 * * *')
+
+  // Check for failed payments - run daily at 11 AM
+  await scheduleJob(JobType.CHECK_FAILED_PAYMENTS, {}, '0 11 * * *')
+
   console.log('[Scheduler] Scheduled jobs initialized')
 }
 

@@ -383,18 +383,18 @@ class CouponService {
               referrer.accountCredits = (referrer.accountCredits || 0) + 100
               await referrer.save()
 
-              // Emit referral points earned event
-              eventBus.emitAsync(
-                createEvent.custom({
-                  type: 'REFERRAL_POINTS_EARNED',
-                  payload: {
-                    referrerId: referrer._id.toString(),
-                    referredUserId: user._id.toString(),
-                    pointsEarned: 100,
-                    earnedAt: new Date(),
-                  },
-                })
-              )
+              // TODO: Emit referral points earned event when custom event support is added
+              // eventBus.emitAsync(
+              //   createEvent.custom({
+              //     type: 'REFERRAL_POINTS_EARNED',
+              //     payload: {
+              //       referrerId: referrer._id.toString(),
+              //       referredUserId: user._id.toString(),
+              //       pointsEarned: 100,
+              //       earnedAt: new Date(),
+              //     },
+              //   })
+              // )
             }
           }
 

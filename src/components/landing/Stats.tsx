@@ -1,39 +1,59 @@
-import ScrollReveal from './ScrollReveal'
+'use client'
 
-const stats = [
+import ScrollReveal from './ScrollReveal'
+import { usePersona } from '@/contexts/PersonaContext'
+import { getPersonaContent } from '@/lib/content/personas'
+
+const defaultStats = [
   {
-    value: '500+',
-    label: 'Companies',
-    description: 'trust their people with us',
+    value: 'One',
+    label: 'Platform',
+    description: 'connecting companies and local restaurants',
   },
   {
-    value: '25K+',
-    label: 'People',
-    description: 'walking in like they own the place',
+    value: 'Zero',
+    label: 'Hassle',
+    description: 'just show up and save',
   },
   {
-    value: '150+',
-    label: 'Restaurants',
-    description: 'building their lunch crowd',
+    value: 'Every',
+    label: 'Lunch',
+    description: 'your workplace opens doors',
   },
   {
-    value: '$2M+',
-    label: 'Saved',
-    description: 'and counting',
+    value: 'Real',
+    label: 'Savings',
+    description: 'on the meals you already buy',
   },
 ]
 
 export default function Stats() {
+  const { persona } = usePersona()
+
+  // Get persona-specific stats if persona is selected
+  const stats = persona ? getPersonaContent(persona).stats : defaultStats
   return (
     <section className="py-20 bg-secondary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal>
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              This isn&apos;t new. It&apos;s just getting started.
+              {persona ? (
+                persona === 'employee' ? 'Built for How You Actually Work' :
+                persona === 'merchant' ? 'Built for How Restaurants Actually Win' :
+                'The Simple Math of Success'
+              ) : (
+                "It's not complicated. It's just better."
+              )}
             </h2>
             <p className="text-lg text-white/70 max-w-2xl mx-auto">
-              Every number here is a real person who decided lunch could be better.
+              {persona ? (
+                persona === 'employee' ? 'Your company badge shouldn\'t just get you in the building—let it get you recognized everywhere you go.' :
+                persona === 'merchant' ? 'Corporate customers are the most reliable crowd in the restaurant business. We help you capture them.' :
+                'We\'re building something simple: Companies + Restaurants + Savings. That\'s it.'
+              ) : (
+                'No gimmicks. No friction. Just a better way to connect companies, restaurants, and the people who make both run.'
+              )}
             </p>
           </div>
         </ScrollReveal>
@@ -48,9 +68,11 @@ export default function Stats() {
                 <div className="text-lg font-semibold text-primary-light mb-1">
                   {stat.label}
                 </div>
-                <div className="text-sm text-white/60">
-                  {stat.description}
-                </div>
+                {('description' in stat && stat.description) ? (
+                  <div className="text-sm text-white/60">
+                    {stat.description as string}
+                  </div>
+                ) : null}
               </div>
             </ScrollReveal>
           ))}

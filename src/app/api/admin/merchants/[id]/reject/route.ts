@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth/auth.config'
+import { auth } from '@/lib/auth/auth'
 import { connectDB } from '@/lib/db/mongoose'
 import { Merchant } from '@/lib/db/models/merchant.model'
 import { audit, AuditAction, AuditSeverity } from '@/lib/audit/logger'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const params = await props.params
+    const session = await auth()
 
     if (!session || session.user.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -32,13 +32,17 @@ export async function POST(
     await merchant.save()
 
     // Log audit trail
-    await audit(AuditAction.MERCHANT_REJECTED, {
-      performedBy: session.user.id,
-      targetId: merchant._id.toString(),
-      targetType: 'Merchant',
-      severity: AuditSeverity.HIGH,
+    audit.withUser({ id: session.user.id }).log({
+      action: AuditAction.MERCHANT_UPDATED,
+      description: `Rejected merchant: ${merchant.businessName}`,
+      resource: 'Merchant',
+      resourceId: merchant._id.toString(),
+      severity: AuditSeverity.WARNING,
       metadata: {
         merchantName: merchant.businessName,
+        previousStatus: 'PENDING',
+        newStatus: 'SUSPENDED',
+        operation: 'reject',
         reason,
       },
     })

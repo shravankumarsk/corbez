@@ -1,10 +1,11 @@
 import { Navbar, Footer, Pricing } from '@/components/landing'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { getTrialDurationText, PROMO_DISCLAIMER_SHORT } from '@/lib/config/promotion'
 
 export const metadata: Metadata = {
-  title: 'Pricing - Start Free for 6 Months',
-  description: 'Restaurant pricing starts at $9.99/month after a 6-month free trial. No setup fees, no per-transaction charges. Cancel anytime. Free forever for employees.',
+  title: `Pricing - Start Free for ${getTrialDurationText()}`,
+  description: `Restaurant pricing starts at $9.99/month after a ${getTrialDurationText()} free trial. No setup fees, no per-transaction charges. Cancel anytime. Free forever for employees.`,
   keywords: [
     'restaurant pricing',
     'corporate discount pricing',
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
     'no transaction fees',
   ],
   openGraph: {
-    title: 'Corbez Pricing - Free 6-Month Trial for Restaurants',
+    title: `Corbez Pricing - Free ${getTrialDurationText()} Trial for Restaurants`,
     description: 'Only $9.99/month for restaurants. Unlimited employee verifications, no transaction fees. Free for employees forever.',
     url: 'https://corbez.com/pricing',
     type: 'website',
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     question: 'Is there really a free trial?',
-    answer: 'Yes! Restaurants get 6 months completely free with no credit card required. You can cancel anytime.',
+    answer: `Yes! Restaurants get ${getTrialDurationText()} completely free with no credit card required. You can cancel anytime. ${PROMO_DISCLAIMER_SHORT}`,
   },
   {
     question: 'Are there any per-transaction fees?',

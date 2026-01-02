@@ -8,7 +8,7 @@ import { Company, CompanyStatus } from '@/lib/db/models/company.model'
 import { InviteCode, InviteCodeStatus } from '@/lib/db/models/invite-code.model'
 import { Referral, ReferralStatus } from '@/lib/db/models/referral.model'
 import { sendVerificationEmail } from '@/lib/services/email/resend'
-import { rateLimiters } from '@/lib/security/rate-limiter'
+import { checkRateLimit, rateLimitConfigs } from '@/lib/middleware/rate-limit'
 
 // Generate URL-friendly slug from company name
 function generateSlug(name: string): string {
@@ -20,10 +20,24 @@ function generateSlug(name: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    // Apply rate limiting - strict for registration (prevent spam accounts)
-    const rateLimitResponse = await rateLimiters.auth(request)
-    if (rateLimitResponse) {
-      return rateLimitResponse
+    // SECURITY: Redis-based rate limiting - strict for registration (prevent spam accounts)
+    const rateLimitResult = await checkRateLimit(request, rateLimitConfigs.auth)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: rateLimitConfigs.auth.message,
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimitResult.reset),
+            'Retry-After': String(Math.ceil((rateLimitResult.reset - Date.now()) / 1000)),
+          },
+        }
+      )
     }
 
     const {
@@ -142,6 +156,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user (password will be hashed by the model's pre-save hook)
+    // SECURITY: Verification token expires in 24 hours
+    const verificationExpiry = new Date()
+    verificationExpiry.setHours(verificationExpiry.getHours() + 24)
+
     const user = await User.create({
       email: email.toLowerCase(),
       password,
@@ -151,6 +169,7 @@ export async function POST(request: NextRequest) {
       referredBy: referralCode || undefined,
       emailVerified: false,
       verificationToken: crypto.randomBytes(32).toString('hex'),
+      verificationTokenExpiry: verificationExpiry,
     })
 
     // Create role-specific profile

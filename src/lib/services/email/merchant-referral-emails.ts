@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { getTrialDuration, getTrialDurationText } from '@/lib/config/promotion'
 
 // Lazy initialization to avoid build-time errors
 let resendClient: Resend | null = null
@@ -143,6 +144,11 @@ export async function sendRefereeInvitationEmail(params: {
   const registerUrl = `${APP_URL}/register?type=merchant&ref=${encodeURIComponent(referrerBusinessName)}`
   const contactName = referredContactName || 'there'
 
+  // Calculate referral bonus trial duration (current trial + 3 months)
+  const { months: standardTrialMonths } = getTrialDuration()
+  const referralBonusMonths = standardTrialMonths + 3
+  const standardTrialText = getTrialDurationText()
+
   try {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
@@ -166,7 +172,7 @@ export async function sendRefereeInvitationEmail(params: {
             <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; border: 1px solid #fcd34d;">
               <div style="background: #fff; border-radius: 8px; padding: 15px; margin-bottom: 20px; border: 2px dashed #f59e0b;">
                 <p style="margin: 0; color: #92400e; font-size: 14px; font-weight: 600;">⭐ SPECIAL REFERRAL OFFER</p>
-                <p style="margin: 5px 0 0 0; color: #78350f; font-size: 22px; font-weight: bold;">9 Months Free Trial</p>
+                <p style="margin: 5px 0 0 0; color: #78350f; font-size: 22px; font-weight: bold;">${referralBonusMonths} Months Free Trial</p>
               </div>
 
               <h2 style="margin-top: 0; color: #92400e;">Hi ${contactName},</h2>
@@ -192,9 +198,9 @@ export async function sendRefereeInvitationEmail(params: {
             <div style="background: #eff6ff; border-radius: 12px; padding: 25px; margin-bottom: 30px; border: 1px solid #bfdbfe;">
               <h3 style="margin-top: 0; color: #1e40af; font-size: 18px;">Your special referral offer</h3>
               <div style="background: #fff; border-radius: 8px; padding: 20px; margin: 15px 0; text-align: center;">
-                <p style="margin: 0; font-size: 48px; font-weight: bold; color: #F45D48; line-height: 1;">9</p>
+                <p style="margin: 0; font-size: 48px; font-weight: bold; color: #F45D48; line-height: 1;">${referralBonusMonths}</p>
                 <p style="margin: 5px 0 0 0; font-size: 18px; color: #666;">months completely free</p>
-                <p style="margin: 10px 0 0 0; font-size: 14px; color: #999;">(vs standard 6 months)</p>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: #999;">(vs standard ${standardTrialText})</p>
               </div>
               <p style="margin: 15px 0 0 0; color: #666; font-size: 14px; text-align: center;">
                 After that, just $9.99/month. Cancel anytime, no questions asked.
@@ -204,7 +210,7 @@ export async function sendRefereeInvitationEmail(params: {
             <div style="text-align: center; margin: 30px 0;">
               <a href="${registerUrl}"
                  style="display: inline-block; background: #F45D48; color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 18px; box-shadow: 0 4px 6px rgba(244, 93, 72, 0.3);">
-                Start Your 9-Month Free Trial
+                Start Your ${referralBonusMonths}-Month Free Trial
               </a>
               <p style="margin: 15px 0 0 0; color: #666; font-size: 14px;">No credit card required</p>
             </div>
@@ -327,6 +333,10 @@ export async function sendReferrerConvertedNotificationEmail(params: {
   const { referrerEmail, referrerName, referredBusinessName, totalMonthsEarned } = params
   const dashboardUrl = `${APP_URL}/dashboard/merchant/referrals`
 
+  // Maximum annual referral rewards = 2x standard trial
+  const { months: standardTrialMonths } = getTrialDuration()
+  const maxAnnualRewardMonths = standardTrialMonths * 2
+
   try {
     const { data, error } = await getResendClient().emails.send({
       from: FROM_EMAIL,
@@ -365,7 +375,7 @@ export async function sendReferrerConvertedNotificationEmail(params: {
             <div style="background: #f0fdf4; border-radius: 12px; padding: 25px; margin-bottom: 30px; border: 1px solid #bbf7d0;">
               <h3 style="margin-top: 0; color: #166534; font-size: 18px; text-align: center;">🎯 Why stop here?</h3>
               <p style="margin: 0; color: #15803d; text-align: center;">
-                You can earn up to <strong>6 months free per year</strong> through referrals.
+                You can earn up to <strong>${maxAnnualRewardMonths} months free per year</strong> through referrals.
                 Know another restaurant that should join?
               </p>
             </div>

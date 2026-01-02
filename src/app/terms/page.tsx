@@ -31,7 +31,7 @@ export default function TermsOfServicePage() {
       <div className="max-w-4xl mx-auto bg-white shadow-sm rounded-lg p-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Terms of Service</h1>
         <p className="text-sm text-gray-600 mb-8">
-          <strong>Last Updated:</strong> December 30, 2025
+          <strong>Last Updated:</strong> January 1, 2026
         </p>
 
         <div className="prose prose-lg max-w-none">

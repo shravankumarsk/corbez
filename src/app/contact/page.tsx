@@ -50,7 +50,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-secondary">Email Us</h3>
-                    <p className="text-muted">hello@corbez.com</p>
+                    <p className="text-muted">contact@corbez.com</p>
                   </div>
                 </div>
 

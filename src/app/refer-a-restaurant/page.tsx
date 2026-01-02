@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Navbar, Footer } from '@/components/landing'
 import { useRouter } from 'next/navigation'
+import { usePromotion } from '@/lib/hooks/usePromotion'
 
 const steps = [
   {
@@ -37,29 +38,33 @@ const steps = [
   },
 ]
 
-const rewards = [
-  {
-    title: 'When they sign up',
-    reward: '1 month free',
-    description: 'Earn your first month when they complete registration',
-  },
-  {
-    title: 'When they convert',
-    reward: '2 more months',
-    description: 'Get 2 additional months when they become a paying customer',
-  },
-  {
-    title: 'They get rewarded too',
-    reward: '9 months free',
-    description: 'Your referral gets an extended 9-month trial (vs standard 6 months)',
-  },
-]
-
 export default function ReferRestaurantPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const promo = usePromotion()
+
+  // Referral bonus is current trial + 3 months (9 months during promo, 6 months after)
+  const referralBonusMonths = promo.trialMonths + 3
+
+  const rewards = [
+    {
+      title: 'When they sign up',
+      reward: '1 month free',
+      description: 'Earn your first month when they complete registration',
+    },
+    {
+      title: 'When they convert',
+      reward: '2 more months',
+      description: 'Get 2 additional months when they become a paying customer',
+    },
+    {
+      title: 'They get rewarded too',
+      reward: `${referralBonusMonths} months free`,
+      description: `Your referral gets an extended ${referralBonusMonths}-month trial (vs standard ${promo.trialText})`,
+    },
+  ]
 
   const [formData, setFormData] = useState({
     referredBusinessName: '',
@@ -201,7 +206,7 @@ export default function ReferRestaurantPage() {
           </div>
           <p className="text-center text-sm text-muted mt-8 max-w-2xl mx-auto">
             *Rewards activate after the referred restaurant processes 10+ verified employee visits.
-            Maximum 6 months free rewards per year per merchant.
+            Maximum {promo.trialMonths * 2} months free rewards per year per merchant.
           </p>
         </div>
       </section>
@@ -431,7 +436,7 @@ export default function ReferRestaurantPage() {
               ))}
             </div>
             <p className="text-xl text-muted mb-4">
-              &ldquo;I&apos;ve referred 5 restaurants and earned 6 months free. It&apos;s a no-brainer—help out your neighbors and save money.&rdquo;
+              &ldquo;I&apos;ve referred 5 restaurants and earned {promo.trialMonths * 2} months free. It&apos;s a no-brainer—help out your neighbors and save money.&rdquo;
             </p>
             <p className="text-secondary font-medium">
               — Tony, Owner of Bella Pizza

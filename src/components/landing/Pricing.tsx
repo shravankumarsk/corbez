@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import ScrollReveal from './ScrollReveal'
+import { usePromotion } from '@/lib/hooks/usePromotion'
 
 const included = [
   'Unlimited employee verifications',
@@ -11,6 +12,8 @@ const included = [
 ]
 
 export default function Pricing() {
+  const promo = usePromotion()
+
   return (
     <section className="py-20 bg-gray-50" id="pricing">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -41,11 +44,16 @@ export default function Pricing() {
               {/* Trial Banner */}
               <div className="bg-accent/10 border-b border-accent/20 px-8 py-4 text-center">
                 <p className="text-secondary font-semibold">
-                  6 months free. See if we&apos;re right for each other.
+                  {promo.trialText} free{promo.isPromo && '*'}. See if we&apos;re right for each other.
                 </p>
                 <p className="text-sm text-muted">
                   No credit card. No commitment. No catch.
                 </p>
+                {promo.isPromo && (
+                  <p className="text-xs text-muted mt-2">
+                    {promo.disclaimerShort}
+                  </p>
+                )}
               </div>
 
               {/* What's Included */}
@@ -66,7 +74,7 @@ export default function Pricing() {
                   href="/register?type=merchant"
                   className="mt-8 w-full bg-primary hover:bg-primary-dark text-white py-4 rounded-xl font-semibold text-center transition-colors block"
                 >
-                  Start 6 Months Free
+                  Start {promo.trialText.charAt(0).toUpperCase() + promo.trialText.slice(1)} Free
                 </Link>
 
                 <p className="text-center text-sm text-muted mt-4">

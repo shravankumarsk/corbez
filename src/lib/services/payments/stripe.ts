@@ -1,10 +1,16 @@
 import Stripe from 'stripe'
+import { getTrialDuration } from '@/lib/config/promotion'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 // Subscription pricing
 export const SUBSCRIPTION_PRICE = 999 // $9.99 in cents
-export const TRIAL_DAYS = 180 // 6 months free trial
+
+// Get dynamic trial duration based on promotion
+export function getTrialDays(): number {
+  const { months } = getTrialDuration()
+  return months * 30 // Approximate days (Stripe uses days)
+}
 
 // Lazy initialization to avoid build-time errors
 let stripeClient: Stripe | null = null
@@ -95,7 +101,7 @@ export async function createCheckoutSession(
       },
     ],
     subscription_data: {
-      trial_period_days: TRIAL_DAYS,
+      trial_period_days: getTrialDays(),
       metadata: {
         merchantId: params.merchantId,
       },
@@ -218,7 +224,7 @@ export async function applyReferralReward(
   const stripe = getStripeClient()
 
   // Get current subscription
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+  const subscription = (await stripe.subscriptions.retrieve(subscriptionId)) as any
 
   // Calculate new period end (add months to current period end)
   const currentPeriodEnd = new Date((subscription.current_period_end || 0) * 1000)

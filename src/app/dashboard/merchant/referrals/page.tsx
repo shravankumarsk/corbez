@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePromotion } from '@/lib/hooks/usePromotion'
 
 interface ReferralStats {
   totalReferred: number
@@ -30,6 +31,10 @@ export default function MerchantReferralsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [copiedLink, setCopiedLink] = useState(false)
+  const promo = usePromotion()
+
+  // Referral bonus is current trial + 3 months
+  const referralBonusMonths = promo.trialMonths + 3
 
   const referralLink = typeof window !== 'undefined'
     ? `${window.location.origin}/refer-a-restaurant`
@@ -109,13 +114,13 @@ export default function MerchantReferralsPage() {
 
   const shareViaEmail = () => {
     const subject = 'Join Corbez and fill your empty tables'
-    const body = `Hi,\n\nI've been using Corbez to attract more corporate customers, and I think you'd love it too.\n\nCorbez connects local restaurants with thousands of corporate employees looking for places to eat. You set the discounts, and they become your regulars.\n\nBest part? You get 9 months completely free to try it (vs the standard 6 months), and I earn rewards when you join.\n\nCheck it out: ${referralLink}\n\nLet me know if you have questions!`
+    const body = `Hi,\n\nI've been using Corbez to attract more corporate customers, and I think you'd love it too.\n\nCorbez connects local restaurants with thousands of corporate employees looking for places to eat. You set the discounts, and they become your regulars.\n\nBest part? You get ${referralBonusMonths} months completely free to try it (vs the standard ${promo.trialText}), and I earn rewards when you join.\n\nCheck it out: ${referralLink}\n\nLet me know if you have questions!`
 
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
   const shareViaWhatsApp = () => {
-    const message = `Hey! I've been using Corbez to attract more corporate customers. You should check it out - you get 9 months free to try it: ${referralLink}`
+    const message = `Hey! I've been using Corbez to attract more corporate customers. You should check it out - you get ${referralBonusMonths} months free to try it: ${referralLink}`
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank')
   }
 
@@ -356,11 +361,11 @@ export default function MerchantReferralsPage() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary font-bold mt-0.5">•</span>
-                <span>Your referral gets <strong>9 months free</strong> (vs standard 6 months)</span>
+                <span>Your referral gets <strong>{referralBonusMonths} months free</strong> (vs standard {promo.trialText})</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary font-bold mt-0.5">•</span>
-                <span>Maximum <strong>6 months free rewards per year</strong></span>
+                <span>Maximum <strong>{promo.trialMonths * 2} months free rewards per year</strong></span>
               </li>
             </ul>
           </div>

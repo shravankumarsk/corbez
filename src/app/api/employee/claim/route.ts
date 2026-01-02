@@ -4,15 +4,28 @@ import { connectDB } from '@/lib/db/mongoose'
 import { Employee } from '@/lib/db/models/employee.model'
 import { couponService } from '@/lib/services/coupon.service'
 import { moderationService } from '@/lib/services/moderation.service'
-import { rateLimiters } from '@/lib/security/rate-limiter'
+import { checkRateLimit, rateLimitConfigs } from '@/lib/middleware/rate-limit'
 import { fraudDetection } from '@/lib/security/fraud-detection'
 
 export async function POST(request: NextRequest) {
   try {
-    // Apply rate limiting - prevent coupon claim spam
-    const rateLimitResponse = await rateLimiters.couponClaim(request)
-    if (rateLimitResponse) {
-      return rateLimitResponse
+    // SECURITY: Redis-based rate limiting - prevent coupon claim spam
+    const rateLimitResult = await checkRateLimit(request, rateLimitConfigs.strict)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Too many coupon claims. Please wait a moment.',
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimitResult.reset),
+          },
+        }
+      )
     }
 
     const session = await auth()

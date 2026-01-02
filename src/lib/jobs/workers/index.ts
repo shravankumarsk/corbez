@@ -3,6 +3,10 @@ import { JobType, redisConnection } from '../queue'
 import { processEmailJob, processBulkEmailJob } from './email.worker'
 import { processCleanupJob } from './cleanup.worker'
 import { processAnalyticsJob } from './analytics.worker'
+import {
+  sendTrialExpirationReminders,
+  checkFailedPayments,
+} from './trial.worker'
 
 type JobProcessor = (job: Job) => Promise<void>
 
@@ -18,6 +22,12 @@ const processors: Partial<Record<JobType, JobProcessor>> = {
   [JobType.SYNC_ANALYTICS]: processAnalyticsJob,
   [JobType.UPDATE_MERCHANT_STATS]: processAnalyticsJob,
   [JobType.GENERATE_SAVINGS_REPORT]: processAnalyticsJob,
+  [JobType.SEND_TRIAL_EXPIRATION_REMINDERS]: async (job) => {
+    await sendTrialExpirationReminders(job)
+  },
+  [JobType.CHECK_FAILED_PAYMENTS]: async (job) => {
+    await checkFailedPayments(job)
+  },
 }
 
 let worker: Worker | null = null

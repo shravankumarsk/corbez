@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { StepBasicInfo, StepLocation, StepBusinessMetrics } from '@/components/merchant/onboarding'
+import StepSecurityTerms from '@/components/merchant/onboarding/StepSecurityTerms'
 import { PlaceData } from '@/components/merchant/GoogleMapsPlaceSearch'
 
 const STEPS = [
   { number: 1, title: 'Business Info' },
   { number: 2, title: 'Location' },
   { number: 3, title: 'Details' },
+  { number: 4, title: 'Terms' },
 ]
 
 interface FormData {
@@ -30,6 +32,9 @@ interface FormData {
   peakHours: string[]
   cateringAvailable: boolean
   offersDelivery: boolean
+  // Step 4
+  securityTermsAccepted: boolean
+  securityTermsVersion: string
 }
 
 export default function MerchantOnboardingPage() {
@@ -54,6 +59,8 @@ export default function MerchantOnboardingPage() {
     peakHours: [],
     cateringAvailable: false,
     offersDelivery: false,
+    securityTermsAccepted: false,
+    securityTermsVersion: '1.0',
   })
 
   useEffect(() => {
@@ -130,6 +137,8 @@ export default function MerchantOnboardingPage() {
       if (!formData.priceTier) return 'Please select a price range'
       if (!formData.seatingCapacity) return 'Please select your seating capacity'
       if (formData.peakHours.length === 0) return 'Please select at least one peak hour'
+    } else if (step === 4) {
+      if (!formData.securityTermsAccepted) return 'Please accept the security terms to complete onboarding'
     }
     return null
   }
@@ -207,7 +216,7 @@ export default function MerchantOnboardingPage() {
   }
 
   const handleComplete = async () => {
-    const validationError = validateStep(3)
+    const validationError = validateStep(4)
     if (validationError) {
       setError(validationError)
       return
@@ -363,6 +372,15 @@ export default function MerchantOnboardingPage() {
             />
           )}
 
+          {currentStep === 4 && (
+            <StepSecurityTerms
+              data={{
+                securityTermsAccepted: formData.securityTermsAccepted,
+              }}
+              onChange={(data) => setFormData({ ...formData, ...data })}
+            />
+          )}
+
           {/* Navigation Buttons */}
           <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
             {currentStep > 1 ? (
@@ -378,7 +396,7 @@ export default function MerchantOnboardingPage() {
               <div />
             )}
 
-            {currentStep < 3 ? (
+            {currentStep < 4 ? (
               <button
                 type="button"
                 onClick={handleNext}
@@ -391,7 +409,7 @@ export default function MerchantOnboardingPage() {
               <button
                 type="button"
                 onClick={handleComplete}
-                disabled={saving}
+                disabled={saving || !formData.securityTermsAccepted}
                 className="px-8 py-3 bg-primary hover:bg-primary-dark text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
               >
                 {saving ? 'Completing...' : 'Complete Setup'}

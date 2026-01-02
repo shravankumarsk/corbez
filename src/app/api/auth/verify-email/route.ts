@@ -2,9 +2,29 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db/mongoose'
 import { User } from '@/lib/db/models/user.model'
 import { sendWelcomeEmail } from '@/lib/services/email/resend'
+import { checkRateLimit, rateLimitConfigs } from '@/lib/middleware/rate-limit'
 
 export async function GET(request: NextRequest) {
   try {
+    // SECURITY: Rate limiting - prevent token brute force attacks
+    const rateLimitResult = await checkRateLimit(request, rateLimitConfigs.default)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Too many verification attempts. Please try again later.',
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimitResult.reset),
+          },
+        }
+      )
+    }
+
     const token = request.nextUrl.searchParams.get('token')
 
     if (!token) {
@@ -23,6 +43,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // SECURITY: Check if token has expired (24 hours)
+    if (user.verificationTokenExpiry && new Date() > user.verificationTokenExpiry) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Verification link has expired. Please request a new verification email.',
+        },
+        { status: 400 }
+      )
+    }
+
     // Check if already verified
     if (user.emailVerified) {
       return NextResponse.json({
@@ -34,6 +65,7 @@ export async function GET(request: NextRequest) {
     // Verify the email
     user.emailVerified = true
     user.verificationToken = undefined
+    user.verificationTokenExpiry = undefined
     await user.save()
 
     // Send welcome email (non-blocking)

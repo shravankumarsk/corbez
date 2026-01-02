@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import SessionProvider from '@/components/providers/SessionProvider'
 import CookieConsent from '@/components/common/CookieConsent'
+import { PersonaProvider } from '@/contexts/PersonaContext'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -95,8 +96,10 @@ export default function RootLayout({
         <meta name="theme-color" content="#F45D48" />
       </head>
       <body className="min-h-screen bg-gray-50 antialiased">
-        <SessionProvider>{children}</SessionProvider>
-        <CookieConsent />
+        <PersonaProvider>
+          <SessionProvider>{children}</SessionProvider>
+          <CookieConsent />
+        </PersonaProvider>
       </body>
     </html>
   )

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { getTrialDurationText } from '@/lib/config/promotion'
 
 interface BlogCTAProps {
   variant?: 'restaurant' | 'company' | 'employee' | 'generic'
@@ -9,8 +10,7 @@ export default function BlogCTA({ variant = 'generic', compact = false }: BlogCT
   const ctas = {
     restaurant: {
       title: 'Ready to Attract Corporate Customers?',
-      description:
-        'Join Corbez free for 6 months and start building a loyal base of corporate customers who visit regularly and spend more.',
+      description: `Join Corbez free for ${getTrialDurationText()} and start building a loyal base of corporate customers who visit regularly and spend more.`,
       primaryCTA: {
         text: 'Start Free Trial',
         href: '/for-restaurants',

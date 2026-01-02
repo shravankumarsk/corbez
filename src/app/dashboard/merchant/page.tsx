@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import { getTrialDurationText } from '@/lib/config/promotion'
 
 export default async function MerchantDashboard() {
   const session = await auth()
@@ -35,7 +36,7 @@ export default async function MerchantDashboard() {
               </div>
               <div>
                 <p className="font-medium text-blue-900">Free Trial Active</p>
-                <p className="text-sm text-blue-700">6 months free - then $9.99/month</p>
+                <p className="text-sm text-blue-700">{getTrialDurationText()} free - then $9.99/month</p>
               </div>
             </div>
             <Link href="/dashboard/merchant/billing">

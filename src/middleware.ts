@@ -18,16 +18,22 @@ const publicRoutes = [
   '/register',
   '/verify-email',
   '/reset-password',
+  '/forgot-password',
   '/about',
   '/pricing',
   '/for-employees',
   '/for-restaurants',
+  '/for-companies',
   '/how-it-works',
   '/contact',
   '/careers',
   '/blog',
   '/faq',
   '/refer-a-restaurant',
+  '/help',
+  '/privacy',
+  '/terms',
+  '/cookies',
 ]
 
 // Auth routes - redirect to dashboard if already logged in

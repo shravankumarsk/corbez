@@ -161,10 +161,11 @@ class FraudDetectionService {
 
     if (highSeverityAlerts.length > 0) {
       // Log to audit
-      await audit(AuditAction.FRAUD_DETECTED, {
-        performedBy: employeeId,
-        targetId: employeeId,
-        targetType: 'Employee',
+      await audit.withUser({ id: employeeId }).log({
+        action: AuditAction.RATE_LIMITED,
+        description: 'Fraud detected during coupon claim attempt',
+        resource: 'Employee',
+        resourceId: employeeId,
         severity: AuditSeverity.CRITICAL,
         metadata: {
           alerts: highSeverityAlerts,

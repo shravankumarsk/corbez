@@ -88,6 +88,10 @@ export interface IMerchant extends Document {
   // Onboarding tracking
   onboardingCompleted: boolean
   onboardingCompletedAt?: Date
+  // Security & Compliance
+  securityTermsAccepted: boolean
+  securityTermsAcceptedAt?: Date
+  securityTermsVersion: string
   createdAt: Date
   updatedAt: Date
 }
@@ -232,6 +236,17 @@ const merchantSchema = new Schema<IMerchant>(
       index: true,
     },
     onboardingCompletedAt: Date,
+    // Security & Compliance
+    securityTermsAccepted: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    securityTermsAcceptedAt: Date,
+    securityTermsVersion: {
+      type: String,
+      default: '1.0',
+    },
   },
   {
     timestamps: true,

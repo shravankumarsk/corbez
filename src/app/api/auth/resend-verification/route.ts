@@ -3,9 +3,29 @@ import crypto from 'crypto'
 import { connectDB } from '@/lib/db/mongoose'
 import { User } from '@/lib/db/models/user.model'
 import { sendVerificationEmail } from '@/lib/services/email/resend'
+import { checkRateLimit, rateLimitConfigs } from '@/lib/middleware/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: Strict rate limiting - prevent email spam
+    const rateLimitResult = await checkRateLimit(request, rateLimitConfigs.auth)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Too many verification requests. Please try again later.',
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimitResult.reset),
+          },
+        }
+      )
+    }
+
     const { email } = await request.json()
 
     if (!email) {
@@ -33,9 +53,13 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Generate new verification token
+    // Generate new verification token with 24-hour expiry
     const newToken = crypto.randomBytes(32).toString('hex')
+    const expiryDate = new Date()
+    expiryDate.setHours(expiryDate.getHours() + 24) // 24 hours from now
+
     user.verificationToken = newToken
+    user.verificationTokenExpiry = expiryDate
     await user.save()
 
     // Send verification email

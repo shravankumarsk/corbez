@@ -67,9 +67,8 @@ export function useGoogleMaps(options: GoogleMapsLoadOptions = {}) {
 
 // Extend Window interface for TypeScript
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   interface Window {
-    google?: {
-      maps: typeof google.maps
-    }
+    google?: any
   }
 }

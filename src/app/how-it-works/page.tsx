@@ -1,6 +1,7 @@
 import { Navbar, Footer } from '@/components/landing'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { getTrialDurationText } from '@/lib/config/promotion'
 
 export const metadata: Metadata = {
   title: 'How It Works - Simple Steps for Employees & Restaurants',
@@ -71,7 +72,7 @@ const restaurantSteps = [
   {
     step: 1,
     title: 'Say You\'re In',
-    description: 'Tell us about your restaurant. We\'ll give you a month free to see if this is for you.',
+    description: `Tell us about your restaurant. We'll give you ${getTrialDurationText()} free to see if this is for you.`,
     details: [
       'Quick signup with your business info',
       'No credit card to start',

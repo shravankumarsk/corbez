@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useGoogleMaps } from '@/hooks/useGoogleMaps'
 
+// Declare google as a global variable (loaded by Google Maps script)
+declare const google: any
+
 export interface PlaceData {
   name: string
   address: string
@@ -36,7 +39,8 @@ export function GoogleMapsPlaceSearch({
 }: GoogleMapsPlaceSearchProps) {
   const { isLoaded, loadError } = useGoogleMaps({ libraries: ['places'] })
   const inputRef = useRef<HTMLInputElement>(null)
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const autocompleteRef = useRef<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [isSearching, setIsSearching] = useState(false)
 
@@ -100,12 +104,14 @@ export function GoogleMapsPlaceSearch({
     }
   }, [isLoaded, onPlaceSelected])
 
-  function extractPlaceData(place: google.maps.places.PlaceResult): PlaceData {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function extractPlaceData(place: any): PlaceData {
     const addressComponents = place.address_components || []
 
     // Extract address components
     const getComponent = (type: string, useShortName = false) => {
-      const component = addressComponents.find((c) => c.types.includes(type))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const component = addressComponents.find((c: any) => c.types.includes(type))
       return component ? (useShortName ? component.short_name : component.long_name) : ''
     }
 

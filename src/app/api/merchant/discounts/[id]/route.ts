@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth/auth'
 import { connectDB } from '@/lib/db/mongoose'
-import { Merchant } from '@/lib/db/models/merchant.model'
 import { Discount, DiscountType } from '@/lib/db/models/discount.model'
+import { requireActiveSubscription } from '@/lib/middleware/subscription-guard'
+import { updateDiscountSchema, discountIdSchema } from '@/lib/validations/discount.schema'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -11,41 +11,39 @@ interface RouteParams {
 // PUT - Update a discount
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await auth()
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    // Check subscription status - merchant must have active subscription
+    const { merchant, error } = await requireActiveSubscription(request)
+    if (error) return error
 
     const { id } = await params
-    const body = await request.json()
-    const {
-      name,
-      percentage,
-      companyName,
-      minSpend,
-      perkItem,
-      perkValue,
-      perkDescription,
-      perkRestrictions,
-      isActive,
-      monthlyUsageLimit
-    } = body
 
-    await connectDB()
-
-    // Get merchant
-    const merchant = await Merchant.findOne({ userId: session.user.id })
-
-    if (!merchant) {
+    // SECURITY: Validate discount ID format
+    const idValidation = discountIdSchema.safeParse({ id })
+    if (!idValidation.success) {
       return NextResponse.json(
-        { success: false, error: 'Merchant profile not found' },
-        { status: 404 }
+        { success: false, error: 'Invalid discount ID format' },
+        { status: 400 }
       )
     }
+
+    const body = await request.json()
+
+    // SECURITY: Validate input with Zod to prevent NoSQL injection
+    const validationResult = updateDiscountSchema.safeParse(body)
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          details: validationResult.error.errors,
+        },
+        { status: 400 }
+      )
+    }
+
+    const data = validationResult.data
+
+    await connectDB()
 
     // Find the discount
     const discount = await Discount.findOne({
@@ -60,26 +58,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Validate percentage if provided
-    if (percentage !== undefined && (percentage < 0 || percentage > 100)) {
-      return NextResponse.json(
-        { success: false, error: 'Percentage must be between 0 and 100' },
-        { status: 400 }
-      )
-    }
+    // Update fields with validated data
+    if (data.name !== undefined) discount.name = data.name
+    if (data.percentage !== undefined) discount.percentage = data.percentage
+    if (data.isActive !== undefined) discount.isActive = data.isActive
 
-    // Update fields
-    if (name !== undefined) discount.name = name
-    if (percentage !== undefined) discount.percentage = percentage
-    if (isActive !== undefined) discount.isActive = isActive
-
-    // Type-specific updates
-    if (discount.type === DiscountType.COMPANY && companyName !== undefined) {
+    // Type-specific updates with validated data
+    // SECURITY: Validated input prevents regex injection
+    if (discount.type === DiscountType.COMPANY && data.companyName !== undefined) {
       // Check for duplicate
       const existingCompany = await Discount.findOne({
         merchantId: merchant._id,
         type: DiscountType.COMPANY,
-        companyName: { $regex: new RegExp(`^${companyName}$`, 'i') },
+        companyName: { $regex: new RegExp(`^${data.companyName}$`, 'i') },
         _id: { $ne: discount._id },
       })
 
@@ -90,27 +81,22 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         )
       }
 
-      discount.companyName = companyName
+      discount.companyName = data.companyName
     }
 
-    if (discount.type === DiscountType.SPEND_THRESHOLD && minSpend !== undefined) {
-      if (minSpend <= 0) {
-        return NextResponse.json(
-          { success: false, error: 'Minimum spend must be greater than 0' },
-          { status: 400 }
-        )
-      }
-      discount.minSpend = minSpend
+    if (discount.type === DiscountType.SPEND_THRESHOLD && data.minSpend !== undefined) {
+      discount.minSpend = data.minSpend
     }
 
+    // SECURITY: Validated input prevents regex injection
     if (discount.type === DiscountType.COMPANY_PERK) {
-      if (companyName !== undefined) {
+      if (data.companyName !== undefined) {
         // Check for duplicate
         const existingPerk = await Discount.findOne({
           merchantId: merchant._id,
           type: DiscountType.COMPANY_PERK,
-          companyName: { $regex: new RegExp(`^${companyName}$`, 'i') },
-          perkItem: perkItem || discount.perkItem,
+          companyName: { $regex: new RegExp(`^${data.companyName}$`, 'i') },
+          perkItem: data.perkItem || discount.perkItem,
           _id: { $ne: discount._id },
         })
 
@@ -121,16 +107,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           )
         }
 
-        discount.companyName = companyName
+        discount.companyName = data.companyName
       }
 
-      if (perkItem !== undefined) {
+      if (data.perkItem !== undefined) {
         // Check for duplicate with new perk item
         const existingPerk = await Discount.findOne({
           merchantId: merchant._id,
           type: DiscountType.COMPANY_PERK,
           companyName: discount.companyName,
-          perkItem: { $regex: new RegExp(`^${perkItem}$`, 'i') },
+          perkItem: { $regex: new RegExp(`^${data.perkItem}$`, 'i') },
           _id: { $ne: discount._id },
         })
 
@@ -141,36 +127,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           )
         }
 
-        discount.perkItem = perkItem
+        discount.perkItem = data.perkItem
       }
 
-      if (perkValue !== undefined) {
-        if (perkValue < 0) {
-          return NextResponse.json(
-            { success: false, error: 'Perk value cannot be negative' },
-            { status: 400 }
-          )
-        }
-        discount.perkValue = perkValue
-      }
-
-      if (perkDescription !== undefined) discount.perkDescription = perkDescription
-      if (perkRestrictions !== undefined) discount.perkRestrictions = perkRestrictions
+      if (data.perkValue !== undefined) discount.perkValue = data.perkValue
+      if (data.perkDescription !== undefined) discount.perkDescription = data.perkDescription
+      if (data.perkRestrictions !== undefined) discount.perkRestrictions = data.perkRestrictions
     }
 
-    // Update monthly usage limit
-    if (monthlyUsageLimit !== undefined) {
-      if (monthlyUsageLimit === null || monthlyUsageLimit === '') {
+    // Update monthly usage limit with validated data
+    if (data.monthlyUsageLimit !== undefined) {
+      if (data.monthlyUsageLimit === null || data.monthlyUsageLimit === '') {
         discount.monthlyUsageLimit = null
       } else {
-        const limit = Number(monthlyUsageLimit)
-        if (limit < 1 || limit > 100) {
-          return NextResponse.json(
-            { success: false, error: 'Monthly usage limit must be between 1 and 100' },
-            { status: 400 }
-          )
-        }
-        discount.monthlyUsageLimit = limit
+        discount.monthlyUsageLimit = data.monthlyUsageLimit
       }
     }
 
@@ -192,28 +162,22 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE - Delete a discount
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await auth()
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    // Check subscription status - merchant must have active subscription
+    const { merchant, error } = await requireActiveSubscription(request)
+    if (error) return error
 
     const { id } = await params
 
-    await connectDB()
-
-    // Get merchant
-    const merchant = await Merchant.findOne({ userId: session.user.id })
-
-    if (!merchant) {
+    // SECURITY: Validate discount ID format
+    const idValidation = discountIdSchema.safeParse({ id })
+    if (!idValidation.success) {
       return NextResponse.json(
-        { success: false, error: 'Merchant profile not found' },
-        { status: 404 }
+        { success: false, error: 'Invalid discount ID format' },
+        { status: 400 }
       )
     }
+
+    await connectDB()
 
     // Find and delete the discount
     const discount = await Discount.findOneAndDelete({

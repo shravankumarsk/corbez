@@ -1,17 +1,15 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth/auth'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireMerchant } from '@/lib/middleware/role-guards'
 import { connectDB } from '@/lib/db/mongoose'
 import { Merchant } from '@/lib/db/models/merchant.model'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
+    // SECURITY: Role-based access control - only merchants can access merchant data
+    const { session, error } = await requireMerchant(request)
+    if (error) return error
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     await connectDB()

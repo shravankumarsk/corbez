@@ -29,6 +29,10 @@ export enum JobType {
   // Company jobs
   GENERATE_SAVINGS_REPORT = 'generate-savings-report',
   SYNC_EMPLOYEE_DATA = 'sync-employee-data',
+
+  // Trial & Subscription jobs
+  SEND_TRIAL_EXPIRATION_REMINDERS = 'send-trial-expiration-reminders',
+  CHECK_FAILED_PAYMENTS = 'check-failed-payments',
 }
 
 // Job payloads
@@ -69,6 +73,8 @@ export interface JobPayloads {
   [JobType.UPDATE_MERCHANT_STATS]: { merchantId: string }
   [JobType.GENERATE_SAVINGS_REPORT]: { companyId: string; month: string }
   [JobType.SYNC_EMPLOYEE_DATA]: { companyId: string }
+  [JobType.SEND_TRIAL_EXPIRATION_REMINDERS]: Record<string, never>
+  [JobType.CHECK_FAILED_PAYMENTS]: Record<string, never>
 }
 
 // Redis connection configuration

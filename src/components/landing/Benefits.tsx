@@ -1,4 +1,14 @@
+'use client'
+
 import ScrollReveal from './ScrollReveal'
+import { usePersona } from '@/contexts/PersonaContext'
+import { getPersonaContent } from '@/lib/content/personas'
+import {
+  getPersonaBadgeStyles,
+  getPersonaHoverBorderColor,
+  getPersonaIconBgClasses,
+  getPersonaColor,
+} from '@/lib/utils/persona-helpers'
 
 const employeeBenefits = [
   {
@@ -79,11 +89,67 @@ const restaurantBenefits = [
 ]
 
 export default function Benefits() {
+  const { persona } = usePersona()
+
+  // If persona is selected, get persona-specific benefits
+  const personaBenefits = persona ? getPersonaContent(persona).benefits : null
+
   return (
     <section className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* For Employees */}
-        <div className="mb-20">
+        {/* Show persona-specific section if persona is selected */}
+        {personaBenefits ? (
+          <div>
+            <ScrollReveal>
+              <div className="text-center mb-12">
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 ${getPersonaBadgeStyles(persona)}`}>
+                  {persona === 'employee' ? 'For the People Who Make Companies Run' :
+                   persona === 'merchant' ? 'For the Places That Feed Them' :
+                   'For the Teams That Lead Them'}
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-secondary mb-4">
+                  {persona === 'employee' ? 'Your job opens doors. Literally.' :
+                   persona === 'merchant' ? 'Turn foot traffic into your tribe' :
+                   'A Benefit That Actually Gets Used'}
+                </h2>
+                <p className="text-lg text-muted max-w-2xl mx-auto">
+                  {persona === 'employee' ? 'You spend all day earning a living. Spend your lunch hour enjoying it.' :
+                   persona === 'merchant' ? 'Those office workers walking by? They\'re looking for a place to belong. Be that place.' :
+                   'Zero cost to you. Zero hassle. High adoption. Measurable impact.'}
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {personaBenefits.map((benefit, index) => (
+                <ScrollReveal key={benefit.title} delay={100 + index * 100}>
+                  <div className={`bg-white rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all group h-full ${getPersonaHoverBorderColor(persona)}`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${getPersonaIconBgClasses(persona)}`}>
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-secondary mb-2">
+                      {benefit.title}
+                    </h3>
+                    <p className="text-sm text-muted">
+                      {benefit.description}
+                    </p>
+                    {benefit.metric && (
+                      <div className={`mt-3 pt-3 border-t border-gray-100 text-sm font-semibold ${getPersonaColor(persona)}`}>
+                        {benefit.metric}
+                      </div>
+                    )}
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        ) : (
+          // Show both sections if no persona is selected
+          <>
+            {/* For Employees */}
+            <div className="mb-20">
           <ScrollReveal>
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-4">
@@ -151,6 +217,8 @@ export default function Benefits() {
             ))}
           </div>
         </div>
+          </>
+        )}
       </div>
     </section>
   )

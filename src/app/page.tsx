@@ -13,6 +13,8 @@ import {
   CTASection,
   Footer,
 } from '@/components/landing'
+import PersonaGateway from '@/components/landing/PersonaGateway'
+import PersonaSwitcher from '@/components/landing/PersonaSwitcher'
 import StructuredData, { organizationSchema, websiteSchema } from '@/components/seo/StructuredData'
 
 export default function Home() {
@@ -92,6 +94,7 @@ export default function Home() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <Hero />
+        <PersonaGateway />
         <HowItWorks />
         <Benefits />
         <Stats />
@@ -99,6 +102,7 @@ export default function Home() {
         <Pricing />
         <CTASection />
         <Footer />
+        <PersonaSwitcher />
       </div>
     </>
   )

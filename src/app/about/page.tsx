@@ -1,5 +1,6 @@
 import { Navbar, Footer } from '@/components/landing'
 import Link from 'next/link'
+import { getTrialDurationText } from '@/lib/config/promotion'
 
 export default function AboutPage() {
   return (
@@ -11,7 +12,7 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-secondary mb-6">
-              About Corbe
+              About Corbez
             </h1>
             <p className="text-xl text-muted">
               We&apos;re building a bridge between corporate employees and local restaurants,
@@ -106,7 +107,7 @@ export default function AboutPage() {
               </div>
               <h3 className="text-xl font-semibold text-secondary mb-3">Fair Value</h3>
               <p className="text-muted">
-                $9.99/month for restaurants (after 6 months free) is accessible to businesses of all sizes.
+                $9.99/month for restaurants (after {getTrialDurationText()} free) is accessible to businesses of all sizes.
                 Employees use the service for free. Everyone benefits.
               </p>
             </div>

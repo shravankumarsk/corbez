@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth/auth.config'
+import { auth } from '@/lib/auth/auth'
 import { connectDB } from '@/lib/db/mongoose'
 import { Merchant } from '@/lib/db/models/merchant.model'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (!session || session.user.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -37,7 +36,7 @@ export async function GET(request: NextRequest) {
       const daysSinceCreation = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
 
       return {
-        id: merchant._id.toString(),
+        id: (merchant._id as any).toString(),
         businessName: merchant.businessName,
         contactEmail: merchant.contactEmail,
         contactPhone: merchant.contactPhone,

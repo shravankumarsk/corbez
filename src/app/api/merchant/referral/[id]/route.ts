@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth/auth'
 import { connectDB } from '@/lib/db/mongoose'
-import { Merchant } from '@/lib/db/models/merchant.model'
 import {
   MerchantReferral,
   MerchantReferralStatus,
 } from '@/lib/db/models/merchant-referral.model'
+import { requireActiveSubscription } from '@/lib/middleware/subscription-guard'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -14,28 +13,13 @@ interface RouteParams {
 // GET - Get a specific referral
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await auth()
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    // Check subscription status - merchant must have active subscription
+    const { merchant, error } = await requireActiveSubscription(request)
+    if (error) return error
 
     const { id } = await params
 
     await connectDB()
-
-    // Get merchant
-    const merchant = await Merchant.findOne({ userId: session.user.id })
-
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, error: 'Merchant profile not found' },
-        { status: 404 }
-      )
-    }
 
     // Find the referral
     const referral = await MerchantReferral.findOne({
@@ -68,30 +52,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PATCH - Update referral status or details
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await auth()
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    // Check subscription status - merchant must have active subscription
+    const { merchant, error } = await requireActiveSubscription(request)
+    if (error) return error
 
     const { id } = await params
     const body = await request.json()
     const { status, internalNotes, claimReward } = body
 
     await connectDB()
-
-    // Get merchant
-    const merchant = await Merchant.findOne({ userId: session.user.id })
-
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, error: 'Merchant profile not found' },
-        { status: 404 }
-      )
-    }
 
     // Find the referral
     const referral = await MerchantReferral.findOne({
@@ -116,8 +85,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       referral.internalNotes = internalNotes
     }
 
-    // Claim reward if requested
-    if (claimReward && referral.isVerified && !referral.referrerRewardClaimed) {
+    // Claim reward if requested (must be converted)
+    if (claimReward && referral.status === 'CONVERTED' && !referral.referrerRewardClaimed) {
       await referral.claimReferrerReward()
       // TODO: Apply credit to merchant's Stripe subscription
     }
@@ -140,28 +109,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 // DELETE - Delete a referral (only if still pending)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await auth()
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    // Check subscription status - merchant must have active subscription
+    const { merchant, error } = await requireActiveSubscription(request)
+    if (error) return error
 
     const { id } = await params
 
     await connectDB()
-
-    // Get merchant
-    const merchant = await Merchant.findOne({ userId: session.user.id })
-
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, error: 'Merchant profile not found' },
-        { status: 404 }
-      )
-    }
 
     // Find the referral
     const referral = await MerchantReferral.findOne({

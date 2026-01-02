@@ -4,6 +4,8 @@ import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
+import { usePromotion } from '@/lib/hooks/usePromotion'
+import TrialExpirationBanner from '@/components/dashboard/TrialExpirationBanner'
 
 interface SubscriptionData {
   status: string
@@ -18,6 +20,7 @@ function BillingContent() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const promo = usePromotion()
 
   // Check for success/cancel params from Stripe redirect
   useEffect(() => {
@@ -132,8 +135,16 @@ function BillingContent() {
     <div className="max-w-2xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Billing & Subscription</h1>
-        <p className="text-gray-600 mt-1">Manage your Corbe subscription</p>
+        <p className="text-gray-600 mt-1">Manage your Corbez subscription</p>
       </div>
+
+      {/* Trial Expiration Warning Banner */}
+      {!loading && subscription && (
+        <TrialExpirationBanner
+          trialEndDate={subscription.trialEnd}
+          status={subscription.status}
+        />
+      )}
 
       {message && (
         <div
@@ -166,7 +177,7 @@ function BillingContent() {
               <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              6-month free trial
+              {promo.trialText} free trial
             </li>
             <li className="flex items-center gap-2 text-gray-700">
               <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -269,7 +280,7 @@ function BillingContent() {
           <div>
             <h4 className="font-medium text-gray-800">When will I be charged?</h4>
             <p className="text-gray-600 text-sm mt-1">
-              You won&apos;t be charged during your 6-month free trial. After the trial ends,
+              You won&apos;t be charged during your {promo.trialText} free trial. After the trial ends,
               you&apos;ll be charged $9.99/month. You can cancel anytime.
             </p>
           </div>

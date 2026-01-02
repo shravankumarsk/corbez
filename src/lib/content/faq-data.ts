@@ -1,3 +1,5 @@
+import { getTrialDurationText, PROMO_DISCLAIMER } from '@/lib/config/promotion'
+
 // Type definitions
 export type FAQAudience = 'employee' | 'merchant' | 'company' | 'all'
 export type FAQCategory = 'getting-started' | 'billing' | 'discounts' | 'technical' | 'security' | 'general'
@@ -135,7 +137,7 @@ Important: Your QR code must be scanned before payment is processed. Discounts c
 
 1. You can request to add your company during signup
 2. We'll reach out to your HR department to verify and onboard
-3. In the meantime, ask your HR team to contact us at partners@corbez.com
+3. In the meantime, ask your HR team to contact us at contact@corbez.com
 4. Onboarding typically takes 2-3 business days
 
 Want to speed things up? Share the link corbez.com/for-companies with your HR team. They can sign up directly and invite all employees at once.`,
@@ -203,8 +205,8 @@ We only collect: name, work email, and company affiliation. We don't track your 
     question: 'How much does Corbez cost for restaurants?',
     answer: `Corbez pricing is simple and affordable:
 
-Monthly Subscription: $99/month (billed monthly)
-Annual Subscription: $999/year (save $189, 2 months free)
+Monthly Subscription: $9.99/month (billed monthly)
+Annual Subscription: $99.99/year (save $20, 2 months free)
 
 What's included:
 - Unlimited discount redemptions
@@ -214,7 +216,9 @@ What's included:
 - Marketing to corporate employees in your area
 - Customer insights and trends
 
-Plus: First 6 months free for new partners! No credit card required to start your trial.`,
+Plus: First ${getTrialDurationText()} free for new partners! No credit card required to start your trial.
+
+${PROMO_DISCLAIMER}`,
     tags: ['pricing', 'cost', 'subscription', 'fees'],
     priority: 10,
     relatedQuestions: ['merchant-free-trial', 'merchant-transaction-fees'],
@@ -223,16 +227,18 @@ Plus: First 6 months free for new partners! No credit card required to start you
     id: 'merchant-free-trial',
     audience: 'merchant',
     category: 'billing',
-    question: 'Is there really a 6-month free trial?',
-    answer: `Yes! We offer a genuine 6-month free trial:
+    question: `Is there really a ${getTrialDurationText()} free trial?`,
+    answer: `Yes! We offer a genuine ${getTrialDurationText()} free trial:
 
 - Full access to all features
 - No credit card required to start
 - No transaction fees during trial
 - Cancel anytime with no penalties
-- After 6 months, choose to continue at $99/month or cancel
+- After ${getTrialDurationText()}, choose to continue at $9.99/month or cancel
 
-Why 6 months? We want you to see real results and build a loyal corporate customer base before paying anything. Most restaurants see a 40% increase in weekday lunch traffic within 3 months.`,
+We want you to see real results and build a loyal corporate customer base before paying anything. Most restaurants see a 40% increase in weekday lunch traffic within 3 months.
+
+${PROMO_DISCLAIMER}`,
     tags: ['trial', 'free trial', 'no credit card'],
     priority: 10,
     relatedQuestions: ['merchant-pricing'],
@@ -244,7 +250,7 @@ Why 6 months? We want you to see real results and build a loyal corporate custom
     question: 'Are there any per-transaction fees?',
     answer: `No! Unlike other platforms, Corbez charges zero transaction fees.
 
-You pay a flat monthly subscription ($99/month) with unlimited redemptions. Whether you have 10 redemptions or 1,000 redemptions per month, your cost stays the same.
+You pay a flat monthly subscription ($9.99/month) with unlimited redemptions. Whether you have 10 redemptions or 1,000 redemptions per month, your cost stays the same.
 
 This means:
 - Predictable monthly expenses
@@ -516,6 +522,123 @@ Use these insights to:
 Export reports monthly for HR records or quarterly business reviews.`,
     tags: ['analytics', 'engagement', 'metrics', 'dashboard'],
     priority: 7,
+  },
+  {
+    id: 'company-it-legal-approval',
+    audience: 'company',
+    category: 'getting-started',
+    question: 'Do we need IT or legal approval?',
+    answer: `Probably not. Corbez doesn&apos;t require:
+
+Technical requirements:
+- No software installation
+- No integration with company systems
+- No access to company data
+- No IT resources needed
+
+Legal considerations:
+- Employees verify themselves with work email
+- No data sharing between company and Corbez
+- Standard terms of service (review at corbez.com/terms)
+- GDPR & CCPA compliant
+
+Most companies treat this like approving a lunch-and-learn event, not enterprise software.
+
+However, policies vary by company. If you&apos;re unsure:
+1. Review our privacy policy and terms
+2. Share with your legal/compliance team
+3. We&apos;re happy to answer any questions at legal@corbez.com`,
+    tags: ['legal', 'IT approval', 'compliance', 'security'],
+    priority: 8,
+    relatedQuestions: ['company-cost', 'company-data-privacy'],
+  },
+  {
+    id: 'company-data-privacy',
+    audience: 'company',
+    category: 'general',
+    question: 'What employee data do we see?',
+    answer: `Your company dashboard shows aggregated data only:
+
+What you CAN see:
+- Number of employees enrolled
+- Company-wide adoption rate
+- Total savings across all employees
+- Popular restaurants (aggregated)
+- Peak usage times (aggregated)
+
+What you CANNOT see:
+- Individual employee activity
+- Specific redemption history
+- Personal dining preferences
+- Location tracking
+- Any personally identifiable information
+
+Privacy protection:
+- All data is anonymized
+- SOC 2 compliant
+- GDPR & CCPA compliant
+- Employee data belongs to employees, not companies
+
+This protects employee privacy while giving you the metrics needed to measure program success.`,
+    tags: ['privacy', 'data', 'analytics', 'GDPR', 'compliance'],
+    priority: 8,
+    relatedQuestions: ['company-track-engagement'],
+  },
+  {
+    id: 'company-employee-abuse',
+    audience: 'company',
+    category: 'general',
+    question: 'What if employees abuse the benefit?',
+    answer: `Built-in protections prevent abuse:
+
+How it works:
+- Each employee gets ONE digital pass tied to their work email
+- Pass cannot be shared, sold, or transferred
+- QR codes are single-use and time-limited
+- Restaurant staff verify codes in real-time
+- Suspicious activity flags accounts for review
+
+Employees can use their pass as often as they want (that&apos;s the point!), but they can&apos;t:
+- Share it with friends/family
+- Use multiple accounts
+- Exploit the system
+
+In 2+ years, abuse rate is less than 0.1%. The system works because:
+1. One person, one pass policy
+2. Restaurant verification at point of sale
+3. Automatic fraud detection
+
+If an employee leaves your company, their pass is automatically deactivated when their email is removed from your system.`,
+    tags: ['abuse', 'fraud', 'security', 'verification'],
+    priority: 7,
+  },
+  {
+    id: 'company-adoption-rate',
+    audience: 'company',
+    category: 'general',
+    question: 'Why is the adoption rate so high?',
+    answer: `Our average company adoption rate is 73%, compared to 15-30% for traditional benefits.
+
+Why Corbez works:
+- Daily relevance: Employees eat lunch every workday
+- Instant value: Savings from day one, no waiting period
+- Zero friction: No app downloads, no cards to carry
+- Peer effect: When coworkers mention it, others sign up
+- Free to employees: No cost barrier
+
+Compare to traditional perks:
+- Gym memberships: ~18% usage (barrier: time/motivation)
+- Transit benefits: ~40% usage (barrier: not everyone commutes)
+- Learning stipends: ~25% usage (barrier: time/effort)
+- Corbez: ~73% usage (barrier: none - everyone eats)
+
+High adoption means:
+- Better ROI for your investment (even at $0 cost)
+- More employees feel valued
+- Stronger recruiting/retention tool
+- Measurable positive impact`,
+    tags: ['adoption', 'engagement', 'ROI', 'benefits'],
+    priority: 9,
   },
 
   // ========================================

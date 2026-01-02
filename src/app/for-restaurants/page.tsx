@@ -1,10 +1,11 @@
 import { Navbar, Footer } from '@/components/landing'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { getTrialDurationText, PROMO_DISCLAIMER_SHORT } from '@/lib/config/promotion'
 
 export const metadata: Metadata = {
   title: 'For Restaurants - Attract Corporate Customers with Exclusive Discounts',
-  description: 'Partner with Corbez to reach thousands of corporate employees. 6-month free trial, then just $9.99/month. No per-transaction fees. Fill empty tables during slow hours.',
+  description: `Partner with Corbez to reach thousands of corporate employees. ${getTrialDurationText()} free trial, then just $9.99/month. No per-transaction fees. Fill empty tables during slow hours.`,
   keywords: [
     'restaurant partnership',
     'corporate catering',
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: 'Restaurant Partnerships - Fill Empty Tables with Corporate Customers',
-    description: 'Join Corbez and attract corporate employees. 6 months free, $9.99/month after. No transaction fees.',
+    description: `Join Corbez and attract corporate employees. ${getTrialDurationText()} free, $9.99/month after. No transaction fees.`,
     url: 'https://corbez.com/for-restaurants',
     type: 'website',
   },
@@ -30,7 +31,7 @@ const steps = [
   {
     step: 1,
     title: 'Say You\'re In',
-    description: 'Quick signup. No credit card. 6 months free. You\'re live before lunch.',
+    description: `Quick signup. No credit card. ${getTrialDurationText()} free. You\'re live before lunch.`,
     icon: (
       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -82,7 +83,7 @@ const benefits = [
   },
   {
     title: 'One Flat Price',
-    description: '$9.99/month after 6 months free. No per-scan fees. No percentage of sales. No surprises.',
+    description: `$9.99/month after ${getTrialDurationText()} free. No per-scan fees. No percentage of sales. No surprises.`,
   },
 ]
 
@@ -96,7 +97,7 @@ export default function ForRestaurantsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 bg-accent/10 text-accent px-4 py-2 rounded-full text-sm font-medium mb-6">
-              6 months free. Always.
+              {getTrialDurationText()} free*
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-secondary mb-6">
               Turn the office next door into{' '}
@@ -252,9 +253,14 @@ export default function ForRestaurantsPage() {
               href="/register?type=merchant"
               className="block w-full bg-primary hover:bg-primary-dark text-white py-4 rounded-xl font-semibold transition-all hover:shadow-lg"
             >
-              Start Your Free Month
+              Start {getTrialDurationText().charAt(0).toUpperCase() + getTrialDurationText().slice(1)} Free
             </Link>
-            <p className="text-sm text-muted mt-4">No credit card. Cancel anytime. No questions.</p>
+            <p className="text-sm text-muted mt-4">
+              No credit card. Cancel anytime. No questions.
+            </p>
+            <p className="text-xs text-muted/70 mt-2">
+              *{PROMO_DISCLAIMER_SHORT}
+            </p>
           </div>
         </div>
       </section>

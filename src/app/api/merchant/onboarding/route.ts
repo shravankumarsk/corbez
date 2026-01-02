@@ -6,7 +6,7 @@ import {
   basicInfoSchema,
   locationSchema,
   businessMetricsSchema,
-  onboardingCompleteSchema,
+  onboardingCompleteWithTermsSchema,
 } from '@/lib/validations/merchant.schema'
 
 // GET - Check onboarding status
@@ -194,8 +194,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate complete onboarding data
-    const validated = onboardingCompleteSchema.parse(body)
+    // Validate complete onboarding data (including security terms)
+    const validated = onboardingCompleteWithTermsSchema.parse(body)
 
     // Generate slug from business name
     const slug = validated.businessName
@@ -227,6 +227,11 @@ export async function POST(request: NextRequest) {
       cateringAvailable: validated.cateringAvailable,
       offersDelivery: validated.offersDelivery,
     }
+
+    // SECURITY: Save security terms acceptance
+    merchant.securityTermsAccepted = validated.securityTermsAccepted
+    merchant.securityTermsAcceptedAt = new Date()
+    merchant.securityTermsVersion = validated.securityTermsVersion
 
     merchant.onboardingCompleted = true
     merchant.onboardingCompletedAt = new Date()

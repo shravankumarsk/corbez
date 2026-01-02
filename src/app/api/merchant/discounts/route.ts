@@ -1,32 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth/auth'
 import { connectDB } from '@/lib/db/mongoose'
-import { Merchant } from '@/lib/db/models/merchant.model'
 import { Discount, DiscountType } from '@/lib/db/models/discount.model'
+import { requireActiveSubscription } from '@/lib/middleware/subscription-guard'
+import { createDiscountSchema } from '@/lib/validations/discount.schema'
+import { checkRateLimit, rateLimitConfigs } from '@/lib/middleware/rate-limit'
 
 // GET - List all discounts for the merchant
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user?.id) {
+    // SECURITY: Rate limiting
+    const rateLimitResult = await checkRateLimit(request, rateLimitConfigs.default)
+    if (!rateLimitResult.success) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
+        { error: rateLimitConfigs.default.message },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimitResult.reset),
+          },
+        }
       )
     }
+
+    // Check subscription status
+    const { merchant, error } = await requireActiveSubscription(request)
+    if (error) return error
 
     await connectDB()
-
-    // Get merchant
-    const merchant = await Merchant.findOne({ userId: session.user.id })
-
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, error: 'Merchant profile not found' },
-        { status: 404 }
-      )
-    }
 
     // Get all discounts for this merchant
     const discounts = await Discount.find({ merchantId: merchant._id })
@@ -49,121 +51,47 @@ export async function GET() {
 // POST - Create a new discount
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
-
-    if (!session?.user?.id) {
+    // SECURITY: Rate limiting
+    const rateLimitResult = await checkRateLimit(request, rateLimitConfigs.default)
+    if (!rateLimitResult.success) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
+        { error: rateLimitConfigs.default.message },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimitResult.reset),
+          },
+        }
       )
     }
+
+    // Check subscription status - merchant must have active subscription
+    const { merchant, error } = await requireActiveSubscription(request)
+    if (error) return error
 
     const body = await request.json()
-    const {
-      type,
-      name,
-      percentage,
-      companyName,
-      minSpend,
-      perkItem,
-      perkValue,
-      perkDescription,
-      perkRestrictions,
-      monthlyUsageLimit
-    } = body
 
-    // Validate required fields
-    if (!type || !name) {
+    // SECURITY: Validate input with Zod to prevent NoSQL injection
+    const validationResult = createDiscountSchema.safeParse(body)
+    if (!validationResult.success) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields' },
+        {
+          success: false,
+          error: 'Validation failed',
+          details: validationResult.error.errors,
+        },
         { status: 400 }
       )
     }
 
-    // Percentage is required for all types except COMPANY_PERK
-    if (type !== DiscountType.COMPANY_PERK && percentage === undefined) {
-      return NextResponse.json(
-        { success: false, error: 'Percentage is required' },
-        { status: 400 }
-      )
-    }
-
-    // Validate type
-    if (!Object.values(DiscountType).includes(type)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid discount type' },
-        { status: 400 }
-      )
-    }
-
-    // Validate percentage (if provided)
-    if (percentage !== undefined && (percentage < 0 || percentage > 100)) {
-      return NextResponse.json(
-        { success: false, error: 'Percentage must be between 0 and 100' },
-        { status: 400 }
-      )
-    }
-
-    // Type-specific validation
-    if (type === DiscountType.COMPANY && !companyName) {
-      return NextResponse.json(
-        { success: false, error: 'Company name is required for company discounts' },
-        { status: 400 }
-      )
-    }
-
-    if (type === DiscountType.SPEND_THRESHOLD && (!minSpend || minSpend <= 0)) {
-      return NextResponse.json(
-        { success: false, error: 'Minimum spend amount is required for spend threshold discounts' },
-        { status: 400 }
-      )
-    }
-
-    if (type === DiscountType.COMPANY_PERK) {
-      if (!companyName) {
-        return NextResponse.json(
-          { success: false, error: 'Company name is required for company perks' },
-          { status: 400 }
-        )
-      }
-      if (!perkItem) {
-        return NextResponse.json(
-          { success: false, error: 'Perk item is required for company perks' },
-          { status: 400 }
-        )
-      }
-      if (perkValue !== undefined && perkValue < 0) {
-        return NextResponse.json(
-          { success: false, error: 'Perk value cannot be negative' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Validate monthly usage limit
-    if (monthlyUsageLimit !== null && monthlyUsageLimit !== undefined) {
-      if (monthlyUsageLimit < 1 || monthlyUsageLimit > 100) {
-        return NextResponse.json(
-          { success: false, error: 'Monthly usage limit must be between 1 and 100' },
-          { status: 400 }
-        )
-      }
-    }
+    const data = validationResult.data
 
     await connectDB()
 
-    // Get merchant
-    const merchant = await Merchant.findOne({ userId: session.user.id })
-
-    if (!merchant) {
-      return NextResponse.json(
-        { success: false, error: 'Merchant profile not found' },
-        { status: 404 }
-      )
-    }
-
     // Check if base discount already exists
-    if (type === DiscountType.BASE) {
+    if (data.type === DiscountType.BASE) {
       const existingBase = await Discount.findOne({
         merchantId: merchant._id,
         type: DiscountType.BASE,
@@ -178,11 +106,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate company discount
-    if (type === DiscountType.COMPANY) {
+    // SECURITY: Validated input prevents regex injection
+    if (data.type === DiscountType.COMPANY && 'companyName' in data) {
       const existingCompany = await Discount.findOne({
         merchantId: merchant._id,
         type: DiscountType.COMPANY,
-        companyName: { $regex: new RegExp(`^${companyName}$`, 'i') },
+        companyName: { $regex: new RegExp(`^${data.companyName}$`, 'i') },
       })
 
       if (existingCompany) {
@@ -194,12 +123,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate company perk with same item
-    if (type === DiscountType.COMPANY_PERK) {
+    // SECURITY: Validated input prevents regex injection
+    if (data.type === DiscountType.COMPANY_PERK && 'companyName' in data && 'perkItem' in data) {
       const existingPerk = await Discount.findOne({
         merchantId: merchant._id,
         type: DiscountType.COMPANY_PERK,
-        companyName: { $regex: new RegExp(`^${companyName}$`, 'i') },
-        perkItem: { $regex: new RegExp(`^${perkItem}$`, 'i') },
+        companyName: { $regex: new RegExp(`^${data.companyName}$`, 'i') },
+        perkItem: { $regex: new RegExp(`^${data.perkItem}$`, 'i') },
       })
 
       if (existingPerk) {
@@ -212,28 +142,28 @@ export async function POST(request: NextRequest) {
 
     // Set priority based on type
     let priority = 0
-    if (type === DiscountType.SPEND_THRESHOLD) {
+    if (data.type === DiscountType.SPEND_THRESHOLD) {
       priority = 10 // Highest priority
-    } else if (type === DiscountType.COMPANY_PERK) {
+    } else if (data.type === DiscountType.COMPANY_PERK) {
       priority = 6 // Medium-high priority (perks are special)
-    } else if (type === DiscountType.COMPANY) {
+    } else if (data.type === DiscountType.COMPANY) {
       priority = 5 // Medium priority
     }
     // BASE has priority 0 (lowest)
 
-    // Create discount
+    // Create discount with validated data
     const discount = await Discount.create({
       merchantId: merchant._id,
-      type,
-      name,
-      percentage: type === DiscountType.COMPANY_PERK ? 0 : percentage,
-      companyName: (type === DiscountType.COMPANY || type === DiscountType.COMPANY_PERK) ? companyName : undefined,
-      minSpend: type === DiscountType.SPEND_THRESHOLD ? minSpend : undefined,
-      perkItem: type === DiscountType.COMPANY_PERK ? perkItem : undefined,
-      perkValue: type === DiscountType.COMPANY_PERK ? perkValue : undefined,
-      perkDescription: type === DiscountType.COMPANY_PERK ? perkDescription : undefined,
-      perkRestrictions: type === DiscountType.COMPANY_PERK ? perkRestrictions : undefined,
-      monthlyUsageLimit: monthlyUsageLimit || null,
+      type: data.type,
+      name: data.name,
+      percentage: data.type === DiscountType.COMPANY_PERK ? 0 : (data.percentage ?? 0),
+      companyName: (data.type === DiscountType.COMPANY || data.type === DiscountType.COMPANY_PERK) && 'companyName' in data ? data.companyName : undefined,
+      minSpend: data.type === DiscountType.SPEND_THRESHOLD && 'minSpend' in data ? data.minSpend : undefined,
+      perkItem: data.type === DiscountType.COMPANY_PERK && 'perkItem' in data ? data.perkItem : undefined,
+      perkValue: data.type === DiscountType.COMPANY_PERK && 'perkValue' in data ? data.perkValue : undefined,
+      perkDescription: data.type === DiscountType.COMPANY_PERK && 'perkDescription' in data ? data.perkDescription : undefined,
+      perkRestrictions: data.type === DiscountType.COMPANY_PERK && 'perkRestrictions' in data ? data.perkRestrictions : undefined,
+      monthlyUsageLimit: data.monthlyUsageLimit ?? null,
       priority,
       isActive: true,
     })

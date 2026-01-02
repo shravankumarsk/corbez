@@ -38,9 +38,16 @@ export interface IMerchantReferral extends Document {
   assignedTo?: string
   createdAt: Date
   updatedAt: Date
+  updateStatus(newStatus: MerchantReferralStatus): Promise<void>
+  claimReferrerReward(): Promise<void>
 }
 
-const merchantReferralSchema = new Schema<IMerchantReferral>(
+export interface IMerchantReferralModel extends mongoose.Model<IMerchantReferral> {
+  checkDuplicate(referrerMerchantId: Types.ObjectId, referredEmail: string): Promise<boolean>
+  getReferralStats(referrerMerchantId: Types.ObjectId): Promise<any>
+}
+
+const merchantReferralSchema = new Schema<IMerchantReferral, IMerchantReferralModel>(
   {
     referrerId: {
       type: Schema.Types.ObjectId,
@@ -219,5 +226,5 @@ merchantReferralSchema.methods.claimReferrerReward = async function () {
 }
 
 export const MerchantReferral =
-  mongoose.models.MerchantReferral ||
-  mongoose.model<IMerchantReferral>('MerchantReferral', merchantReferralSchema)
+  (mongoose.models.MerchantReferral as IMerchantReferralModel) ||
+  mongoose.model<IMerchantReferral, IMerchantReferralModel>('MerchantReferral', merchantReferralSchema)

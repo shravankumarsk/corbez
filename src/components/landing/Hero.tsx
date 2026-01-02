@@ -2,8 +2,21 @@
 
 import Link from 'next/link'
 import ScrollReveal from './ScrollReveal'
+import { usePersona } from '@/contexts/PersonaContext'
+import { getPersonaContent } from '@/lib/content/personas'
+import {
+  getPersonaBadgeStyles,
+  getPersonaDotColor,
+  getPersonaColor,
+  getPersonaButtonColor,
+  getPersonaButtonShadow,
+} from '@/lib/utils/persona-helpers'
 
 export default function Hero() {
+  const { persona } = usePersona()
+
+  // Get persona-specific content if persona is selected
+  const personaContent = persona ? getPersonaContent(persona).hero : null
   return (
     <section className="relative pt-28 pb-20 md:pt-36 md:pb-28 bg-gradient-to-b from-background to-white overflow-hidden">
       {/* Background decoration */}
@@ -14,74 +27,125 @@ export default function Hero() {
         <div className="text-center max-w-4xl mx-auto">
           {/* Badge */}
           <ScrollReveal delay={0}>
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-              Where work meets local flavor
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-6 ${getPersonaBadgeStyles(persona)}`}>
+              <span className={`w-2 h-2 rounded-full animate-pulse ${getPersonaDotColor(persona)}`} />
+              {personaContent ? personaContent.badge : 'Where work meets local flavor'}
             </div>
           </ScrollReveal>
 
           {/* Headline - Emotional, not feature-based */}
           <ScrollReveal delay={100}>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-secondary leading-tight mb-6">
-              Your company badge just became your{' '}
-              <span className="text-primary">favorite restaurant&apos;s VIP pass</span>
+              {personaContent ? (
+                personaContent.headline
+              ) : (
+                <>
+                  Your company badge just became your{' '}
+                  <span className="text-primary">favorite restaurant&apos;s VIP pass</span>
+                </>
+              )}
             </h1>
           </ScrollReveal>
 
           {/* Subtitle - Focus on feeling */}
           <ScrollReveal delay={200}>
             <p className="text-lg md:text-xl text-muted max-w-2xl mx-auto mb-10">
-              Walk in. Get recognized. Feel valued.
-              <br className="hidden sm:block" />
-              That&apos;s the corbez experience.
+              {personaContent ? (
+                personaContent.subheadline
+              ) : (
+                <>
+                  Walk in. Get recognized. Feel valued.
+                  <br className="hidden sm:block" />
+                  That&apos;s the corbez experience.
+                </>
+              )}
             </p>
           </ScrollReveal>
 
           {/* CTAs - Action-oriented, tribal */}
           <ScrollReveal delay={300}>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <Link
-                href="/register?type=employee"
-                className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 flex items-center justify-center gap-2"
-              >
-                Claim Your Perks
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
-              <Link
-                href="/register?type=merchant"
-                className="w-full sm:w-auto bg-secondary hover:bg-secondary-light text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:shadow-lg hover:shadow-secondary/25 hover:-translate-y-0.5 flex items-center justify-center gap-2"
-              >
-                Welcome Your Neighbors
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
-            </div>
+            {personaContent ? (
+              // Single persona-specific CTA
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+                <Link
+                  href={`/register?type=${persona}`}
+                  className={`w-full sm:w-auto text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2 ${getPersonaButtonColor(persona)} ${getPersonaButtonShadow(persona)}`}
+                >
+                  {personaContent.cta.primary}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                {personaContent.cta.secondary && (
+                  <Link
+                    href="#how-it-works"
+                    className="w-full sm:w-auto bg-white hover:bg-gray-50 text-secondary border-2 border-gray-200 px-8 py-4 rounded-xl font-semibold text-lg transition-all"
+                  >
+                    {personaContent.cta.secondary}
+                  </Link>
+                )}
+              </div>
+            ) : (
+              // Generic dual CTAs
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+                <Link
+                  href="/register?type=employee"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:shadow-lg hover:shadow-primary/25 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                >
+                  Claim Your Perks
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+                <Link
+                  href="/register?type=merchant"
+                  className="w-full sm:w-auto bg-secondary hover:bg-secondary-light text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:shadow-lg hover:shadow-secondary/25 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                >
+                  Welcome Your Neighbors
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+              </div>
+            )}
           </ScrollReveal>
 
           {/* Trust indicators - Feeling-based, not feature-based */}
           <ScrollReveal delay={400}>
             <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-muted">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>Trusted by real companies</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>Works everywhere you go</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>Savings from day one</span>
-              </div>
+              {personaContent ? (
+                // Persona-specific trust indicators
+                personaContent.trustIndicators.map((indicator, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <svg className={`w-5 h-5 ${getPersonaColor(persona)}`} fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>{indicator}</span>
+                  </div>
+                ))
+              ) : (
+                // Generic trust indicators
+                <>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>Built for companies & restaurants</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>No apps, no hassle</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>Real savings, real simple</span>
+                  </div>
+                </>
+              )}
             </div>
           </ScrollReveal>
         </div>

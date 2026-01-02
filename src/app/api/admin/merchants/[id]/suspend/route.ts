@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth/auth.config'
+import { auth } from '@/lib/auth/auth'
 import { connectDB } from '@/lib/db/mongoose'
-import { Merchant } from '@/lib/db/models/merchant.model'
 import { moderationService } from '@/lib/services/moderation.service'
 import { ModerationReason } from '@/lib/db/models/moderation-action.model'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const params = await props.params
+    const session = await auth()
 
     if (!session || session.user.role !== 'PLATFORM_ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -23,15 +22,19 @@ export async function POST(
     await connectDB()
 
     // Use moderation service to suspend merchant
-    const result = await moderationService.suspendMerchant(params.id, {
-      reason: reason || ModerationReason.TERMS_VIOLATION,
-      reasonDetails: body.reasonDetails,
-      duration: duration || { value: 1, unit: 'permanent' },
-      evidence: {
-        description: body.evidence || 'Suspended by platform admin',
-      },
-      performedBy: session.user.id,
-    })
+    const result = await moderationService.suspendMerchant(
+      params.id,
+      session.user.id,
+      session.user.role,
+      {
+        reason: reason || ModerationReason.TERMS_VIOLATION,
+        reasonDetails: body.reasonDetails,
+        duration: duration || { value: 1, unit: 'permanent' },
+        evidence: {
+          description: body.evidence || 'Suspended by platform admin',
+        },
+      }
+    )
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 })
